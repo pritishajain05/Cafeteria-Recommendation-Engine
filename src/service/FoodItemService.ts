@@ -1,8 +1,9 @@
-import { MealType } from "../enums/MealType";
-import { IFoodCategory } from "../interfaces/IFoodCategory";
-import { IFoodItem } from "../interfaces/IFoodItem";
+import { updateFoodItem } from "../client/AdminActions";
+import { MealType } from "../enum/MealType";
+import { IFoodCategory } from "../interface/IFoodCategory";
+import { IFoodItem, IMenuItem } from "../interface/IFoodItem";
 import { FoodItemRepository } from "../repository/FoodItemRepository";
-import { deleteFoodItem } from '../client/AdminActions';
+
 
 const categoryToMealTypeMapping: { [key: number]: MealType[] } = {
     8: [MealType.Lunch, MealType.Dinner], 
@@ -21,9 +22,12 @@ export class FoodItemService {
   }
 
   async addFoodItem(item: IFoodItem): Promise<{ message: string , success:boolean}> {
+    const exists = await this.foodItemRepository.checkFoodItemExistence(item.name);
+      if(exists) {
+        return { message:"Food Item already Exists! Try to Add another Food Item" , success: false ,}
+      }
     try {
         const foodItemId =  await this.foodItemRepository.addFoodItem(item);
-  
         const mealTypes = categoryToMealTypeMapping[item.foodCategoryId];
         if (mealTypes) {
           for (const mealTypeId of mealTypes) {
@@ -37,6 +41,35 @@ export class FoodItemService {
   }
 
   async deleteFoodItem(itemName: string): Promise<{message: string, success: boolean}> {
-    return await this.foodItemRepository.deleteFoodItem(itemName);
+    const exists = await this.foodItemRepository.checkFoodItemExistence(itemName);
+      if (!exists) {
+        return { success: false, message: "Food item not found." };
+      }
+
+      try {
+        const result = await this.foodItemRepository.deleteFoodItem(itemName);
+        return { success: result.success, message: result.message };
+        
+      } catch (error) {
+        return { success: false, message: `Failed to delete food item: ${error}` };
+      }
+    
+}
+
+async updateFoodItem(itemName: string, updatedFoodItem: IFoodItem): Promise<{ message: string, success: boolean }> {
+  try {
+    const result = await this.foodItemRepository.updateFoodItem(itemName, updatedFoodItem);
+    return { success: result.success, message: result.message };
+  } catch (error) {
+    console.error("Error updating food item:", error);
+    return { success: false, message: `Failed to update food item: ${error}` };
   }
 }
+
+async viewAllFoodItems(): Promise<IMenuItem[]| null>{
+  return await this.foodItemRepository.getAllFoodItems();
+}
+
+}
+
+

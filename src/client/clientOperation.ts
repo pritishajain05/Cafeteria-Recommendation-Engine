@@ -1,19 +1,19 @@
 import readline from "readline";
-import { Role } from "../enums/Role";
+import { Role } from "../enum/Role";
 import {
   handleAdminOption,
   handleChefOption,
   handleEmployeeOption,
 } from "./RoleBasedActions";
-import { DefaultEventsMap } from "@socket.io/component-emitter";
-import { Socket } from "socket.io-client";
+import { socket } from "./client";
 
-const rl = readline.createInterface({
+
+export const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-export const promptLogin = (socket: Socket<DefaultEventsMap, DefaultEventsMap>) => {
+export const promptLogin = () => {
   rl.question("Enter your employee ID: ", (employeeId) => {
     rl.question("Enter your name: ", (name) => {
       socket.emit("login", { id: parseInt(employeeId), name });
@@ -21,22 +21,21 @@ export const promptLogin = (socket: Socket<DefaultEventsMap, DefaultEventsMap>) 
   });
 };
 
-export const requestMenu = (role: Role , socket: Socket<DefaultEventsMap, DefaultEventsMap>) => {
+export const requestMenu = (role: Role) => {
   socket.emit("getRoleBasedMenu", { role });
 };
 
-export const handleMenuOptionSelection = async (role: Role , socket: Socket<DefaultEventsMap, DefaultEventsMap>) => {
+export const handleMenuOptionSelection = async (role: Role) => {
   rl.question("Choose an option: ", async (option: string) => {
-      let response;
       switch (role) {
         case Role.Admin:
-          await handleAdminOption(option , rl , socket , role );      
+          await handleAdminOption(option,role);      
           break;
         case Role.Chef:
-          response = await handleChefOption(option , rl , socket);       
+          await handleChefOption(option , role );       
           break;
         case Role.Employee:
-          response = await handleEmployeeOption(option , rl , socket );
+          await handleEmployeeOption(option ,role );
           break;
         default:
           console.log("Invalid Role");

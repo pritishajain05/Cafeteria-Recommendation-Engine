@@ -1,25 +1,24 @@
-import { DefaultEventsMap } from '@socket.io/component-emitter';
-import { Socket } from 'socket.io-client';
 import { addFoodItem, deleteFoodItem, updateFoodItem, viewFeedbackOnItem, viewMenu, viewMonthlyFeedback } from './AdminActions';
-import readline from "readline";
-import { Role } from '../enums/Role';
+import { Role } from '../enum/Role';
+import { socket } from './client';
+import { rl } from './clientOperation';
 
-export const handleAdminOption = async (option: string , rl: readline.Interface , socket: Socket<DefaultEventsMap, DefaultEventsMap> , role:Role) => {
+export const handleAdminOption = async (option: string , role:Role) => {
     switch (option) {
       case "1":
-        await addFoodItem(rl , socket , role);
+        await addFoodItem(role);
         break;
       case "2":
-        await updateFoodItem(rl);
+        await updateFoodItem(role);
         break;
       case "3":
-        await deleteFoodItem(rl , socket , role);
+        await deleteFoodItem(role);
         break;
       case "4":
         await viewMonthlyFeedback();
         break;
       case "5":
-        await viewMenu();
+        await viewMenu(role);
         break;
       case "6":
         await viewFeedbackOnItem();
@@ -34,7 +33,7 @@ export const handleAdminOption = async (option: string , rl: readline.Interface 
     }
   }
 
-export async function handleChefOption(option: string, rl: readline.Interface , socket: Socket<DefaultEventsMap, DefaultEventsMap>) {
+export async function handleChefOption(option: string, role:Role) {
     switch (option) {
       
       case "logout":
@@ -47,7 +46,7 @@ export async function handleChefOption(option: string, rl: readline.Interface , 
     }
 }
 
-export async function handleEmployeeOption(option: string , rl :readline.Interface , socket: Socket<DefaultEventsMap, DefaultEventsMap>) {
+export async function handleEmployeeOption(option: string , role:Role) {
     switch (option) {
 
       case "logout":

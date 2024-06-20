@@ -1,6 +1,6 @@
 import { pool } from "../db";
-import { IUser } from "../interfaces/IUser";
-import { Role } from "../enums/Role";
+import { IUser } from "../interface/IUser";
+import { Role } from "../enum/Role";
 import { RowDataPacket } from "mysql2";
 import { GET_USER_BY_ID } from "../utils/constant";
 

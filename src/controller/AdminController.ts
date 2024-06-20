@@ -1,4 +1,4 @@
-import { IFoodItem } from "../interfaces/IFoodItem";
+import { IFoodItem } from "../interface/IFoodItem";
 import { FoodItemService } from "../service/FoodItemService";
 
 export class AdminController {

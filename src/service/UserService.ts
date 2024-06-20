@@ -1,6 +1,5 @@
 import { UserRepository } from "../repository/UserRepository";
-import { IUser } from "../interfaces/IUser";
-import { Role } from "../enums/Role";
+import { IUser } from "../interface/IUser";
 
 export class UserService {
     private userRepository = new UserRepository();

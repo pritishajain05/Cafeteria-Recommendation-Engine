@@ -1,5 +1,5 @@
 import { UserService } from "../service/UserService";
-import { IUser } from "../interfaces/IUser";
+import { IUser } from "../interface/IUser";
 
 export class UserController {
     private userService = new UserService();

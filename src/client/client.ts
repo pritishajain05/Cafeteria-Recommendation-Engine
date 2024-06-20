@@ -1,20 +1,20 @@
 import { io } from "socket.io-client";
 import { handleMenuOptionSelection, promptLogin, requestMenu } from "./clientOperation";
 
-const socket = io("http://localhost:3000");
+export const socket = io("http://localhost:3000");
 
 socket.on("connect", () => {
   console.log("Connected to server");
-  promptLogin(socket);
+  promptLogin();
 });
 
 socket.on("loginResponse", (data) => {
   if (data.error) {
     console.log(data.error);
-    promptLogin(socket);
+    promptLogin();
   } else {
     console.log(`Logged in as ${data.role}`);
-    requestMenu(data.role , socket);
+    requestMenu(data.role);
   }
 });
 
@@ -26,25 +26,9 @@ socket.on("menuResponse", (data) => {
     data.menu.forEach((item: string) => {
       console.log(item);
     });
-    handleMenuOptionSelection(data.role , socket);
+    handleMenuOptionSelection(data.role);
   }
 });
-
-// socket.on("selectedOptionResponse", (data) => {
-//     if (data.error) {
-//       console.log("Error:", data.error);
-//     } else {
-//       console.log("Message:", data.message);
-//     }
-  
-//     if (data.option.toLowerCase() !== "exit" && data.option.toLowerCase() !== "logout") {
-//       requestMenu(data.role , socket);
-//     } else {
-//       socket.close();
-//       socket.disconnect();
-//     }
-//   });
-
 
 socket.on("disconnect", () => {
   console.log("Connection closed");

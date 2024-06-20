@@ -1,5 +1,5 @@
 
-import { Role } from '../enums/Role';
+import { Role } from '../enum/Role';
 
 export const showMenu = (role: Role): string[] => {
     switch (role) {
