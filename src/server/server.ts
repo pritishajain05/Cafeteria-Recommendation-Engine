@@ -3,7 +3,7 @@ import http from "http";
 import { UserController } from "../controller/UserController";
 import { showMenu } from "./MenuBasedOnRole";
 import { AdminController } from "../controller/AdminController";
-import { FoodItemService } from '../services/FoodItemService';
+import { FoodItemService } from '../service/FoodItemService';
 import { IFoodItem } from "../interfaces/IFoodItem";
 
 const server = http.createServer();

@@ -1,8 +1,8 @@
 import { MealType } from "../enums/MealType";
 import { IFoodCategory } from "../interfaces/IFoodCategory";
 import { IFoodItem } from "../interfaces/IFoodItem";
-import { FoodItemRepository } from "../repositories/FoodItemRepository";
-import { deleteFoodItem } from './../client/AdminActions';
+import { FoodItemRepository } from "../repository/FoodItemRepository";
+import { deleteFoodItem } from '../client/AdminActions';
 
 const categoryToMealTypeMapping: { [key: number]: MealType[] } = {
     8: [MealType.Lunch, MealType.Dinner], 

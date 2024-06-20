@@ -1,4 +1,4 @@
-import { UserRepository } from "../repositories/UserRepository";
+import { UserRepository } from "../repository/UserRepository";
 import { IUser } from "../interfaces/IUser";
 import { Role } from "../enums/Role";
 

@@ -1,5 +1,5 @@
 import { IFoodItem } from "../interfaces/IFoodItem";
-import { FoodItemService } from "../services/FoodItemService";
+import { FoodItemService } from "../service/FoodItemService";
 
 export class AdminController {
     private foodItemService = new FoodItemService();
