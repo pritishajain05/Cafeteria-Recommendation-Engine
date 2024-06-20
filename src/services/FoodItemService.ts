@@ -2,6 +2,7 @@ import { MealType } from "../enums/MealType";
 import { IFoodCategory } from "../interfaces/IFoodCategory";
 import { IFoodItem } from "../interfaces/IFoodItem";
 import { FoodItemRepository } from "../repositories/FoodItemRepository";
+import { deleteFoodItem } from './../client/AdminActions';
 
 const categoryToMealTypeMapping: { [key: number]: MealType[] } = {
     8: [MealType.Lunch, MealType.Dinner], 
@@ -19,7 +20,7 @@ export class FoodItemService {
     return await this.foodItemRepository.getAllCategories();
   }
 
-  async addFoodItem(item: IFoodItem): Promise<{ message: string }> {
+  async addFoodItem(item: IFoodItem): Promise<{ message: string , success:boolean}> {
     try {
         const foodItemId =  await this.foodItemRepository.addFoodItem(item);
   
@@ -29,9 +30,13 @@ export class FoodItemService {
             await this.foodItemRepository.addFoodItemMealType(foodItemId, mealTypeId);
           }
         }
-        return { message: "Food item added successfully" };
+        return { message: "Food item added successfully" , success: true};
       } catch (error) {
-        return { message: "Error in adding food item"};
+        return { message: "Error in adding food item" , success: false};
       }
+  }
+
+  async deleteFoodItem(itemName: string): Promise<{message: string, success: boolean}> {
+    return await this.foodItemRepository.deleteFoodItem(itemName);
   }
 }

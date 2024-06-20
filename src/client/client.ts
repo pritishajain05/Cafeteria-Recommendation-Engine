@@ -1,5 +1,3 @@
-// src/client.ts
-
 import { io } from "socket.io-client";
 import { handleMenuOptionSelection, promptLogin, requestMenu } from "./clientOperation";
 
@@ -32,19 +30,20 @@ socket.on("menuResponse", (data) => {
   }
 });
 
-socket.on("selectedOptionResponse", (data) => {
-    if (data.error) {
-      console.log("Error:", data.error);
-    } else {
-      console.log("Message:", data.message);
-    }
+// socket.on("selectedOptionResponse", (data) => {
+//     if (data.error) {
+//       console.log("Error:", data.error);
+//     } else {
+//       console.log("Message:", data.message);
+//     }
   
-    if (data.option.toLowerCase() !== "exit" && data.option.toLowerCase() !== "logout") {
-      requestMenu(data.role , socket);
-    } else {
-      socket.disconnect();
-    }
-  });
+//     if (data.option.toLowerCase() !== "exit" && data.option.toLowerCase() !== "logout") {
+//       requestMenu(data.role , socket);
+//     } else {
+//       socket.close();
+//       socket.disconnect();
+//     }
+//   });
 
 
 socket.on("disconnect", () => {

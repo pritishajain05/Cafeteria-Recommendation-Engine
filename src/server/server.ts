@@ -4,6 +4,7 @@ import { UserController } from "../controller/UserController";
 import { showMenu } from "./MenuBasedOnRole";
 import { AdminController } from "../controller/AdminController";
 import { FoodItemService } from '../services/FoodItemService';
+import { IFoodItem } from "../interfaces/IFoodItem";
 
 const server = http.createServer();
 const io = new Server(server);
@@ -34,39 +35,25 @@ io.on("connection", (socket) => {
     }
   });
 
+ 
+  socket.on("deleteFoodItem", async (itemName: string) => {
+    try {
+      const result = await adminController.deleteFoodItem(itemName);
+      socket.emit("deleteFoodItemResponse", { success: result.success, message: result.message });
+    } catch (error) {
+      socket.emit("deleteFoodItemResponse", { message: error });
+    }
+  });
+
+  socket.on("addFoodItem", async (foodItem: IFoodItem) => {
+    try {
+      const result = await adminController.addFoodItem(foodItem);
+      socket.emit("addFoodItemResponse", { success: result.success, message: result.message });
+    } catch (error) {
+      socket.emit("addFoodItemResponse", { message: error });
+    }
+  });
   
-  socket.on("handleAdminResponse", async ({ response, option , role}) => {
-    try {
-      let result;
-      switch (option) {
-        case "1":
-          result = await adminController.addFoodItem(response);
-          break;
-        default:
-          result = {error: "Invalid admin option"}
-      }
-      socket.emit("selectedOptionResponse", { message: result.message, option ,role });
-    } catch (error) {
-      socket.emit("selectedOptionResponse", { error ,option , role});
-    }
-  });
-
-  socket.on("handleChefResponse", async ({ response, option }) => {
-    try {
-
-    } catch (error) {
-      socket.emit("selectedOptionResponse", { error});
-    }
-  });
-
-  socket.on("handleEmployeeResponse", async ({ response, option }) => {
-    try {
-    
-    } catch (error) {
-      socket.emit("selectedOptionResponse", { error });
-    }
-  });
-
   socket.on("getFoodCategories", async () => {
     try {
         const foodCategories = await foodItemService.getAllCategories();

@@ -30,16 +30,13 @@ export const handleMenuOptionSelection = async (role: Role , socket: Socket<Defa
       let response;
       switch (role) {
         case Role.Admin:
-          response = await handleAdminOption(option , rl);
-          socket.emit("handleAdminResponse" ,{ response,option,role});
+          await handleAdminOption(option , rl , socket , role );      
           break;
         case Role.Chef:
-          response = await handleChefOption(option , rl);
-          socket.emit("handleChefResponse" , { response,option });
+          response = await handleChefOption(option , rl , socket);       
           break;
         case Role.Employee:
-          response = await handleEmployeeOption(option , rl);
-          socket.emit("handleEmployeeResponse" , { response,option });
+          response = await handleEmployeeOption(option , rl , socket );
           break;
         default:
           console.log("Invalid Role");
