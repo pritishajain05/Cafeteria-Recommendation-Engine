@@ -1,4 +1,4 @@
-import { positiveWords, negativeWords } from '../utils/constant';
+import { positiveWords, negativeWords, positiveSentences, negativeSentences } from '../utils/constant';
 import { FoodItemRepository } from '../repository/FoodItemRepository';
 import { FeedbackRepository } from '../repository/FeedbackRepository';
 import { IFeedback } from '../interface/IFeedback';
@@ -53,6 +53,7 @@ export class RecommendationService {
     let wordCount = 0;
 
     const words = comment.toLowerCase().split(/\W+/);
+    const sentences = comment.toLowerCase().split(/[.!?]/);
 
     words.forEach(word => {
       if (positiveWords.includes(word)) {
@@ -62,6 +63,14 @@ export class RecommendationService {
       }
       wordCount++;
     });
+
+    sentences.forEach(sentence => {
+        if (positiveSentences.some(positive => sentence.includes(positive))) {
+          sentimentScore += 5; 
+        } else if (negativeSentences.some(negative => sentence.includes(negative))) {
+          sentimentScore -= 5;
+        }
+      });
 
     const normalizedSentimentScore = wordCount ? sentimentScore / wordCount : 0;
     return normalizedSentimentScore;
