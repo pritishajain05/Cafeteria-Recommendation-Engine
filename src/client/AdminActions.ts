@@ -41,16 +41,19 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
                 addFoodItem(role); 
                 return;
               }
-  
+              rl.question("Enter the meal type id:" , (mealTypeId) =>{
+
               const foodItem: IFoodItem = {
                 name,
                 price: itemPrice,
                 availabilityStatus: true,
-                foodCategoryId: category.id,
+                foodCategoryId: parseInt(categoryId),
+                mealTypeId: parseInt(mealTypeId)
               };
-  
+
+
               socket.emit("addFoodItem", foodItem);
-  
+            
               socket.off("addFoodItemResponse");
               socket.on("addFoodItemResponse", (response: { success: boolean; message: string }) => {
                 if (response.success) {
@@ -60,10 +63,10 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
                   console.log(response.message);
                   addFoodItem(role); 
                 }
+              })
+              })
               });
-            });
-          })
-          .catch((error) => {
+            }).catch((error) => {
             console.error("Error fetching categories:", error);
             console.log("Please try again.");
             addFoodItem(role); 
@@ -114,12 +117,15 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
                     updateFoodItem(role);
                     return;
                   }
+
+                  rl.question("Enter the meal type Id:" , (mealTypeId) =>{
   
                   const updatedFoodItem: IFoodItem = {
                     name: newName,
                     price: itemPrice,
                     availabilityStatus: true,
                     foodCategoryId: category.id,
+                    mealTypeId: parseInt(mealTypeId)
                   };
   
                   socket.emit("updateFoodItem", { itemName, updatedFoodItem });
@@ -133,6 +139,7 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
                       console.log(response.message);
                       updateFoodItem(role);
                     }
+                  });
                   });
                 });
               })
@@ -179,15 +186,11 @@ export const deleteFoodItem = async (role:Role) => {
   }
 };
 
-export const viewMonthlyFeedback = async () => {
- 
-  return { message: "Viewed Monthly Feedback" };
-};
-
 export const viewMenu = async (role:Role) => {
 
   socket.emit("viewAllFoodItems");
 
+  socket.off("viewAllFoodItemsResponse");
   socket.on("viewAllFoodItemsResponse", (data) => {
     if (data.error) {
       console.error("Error fetching menu:", data.error);
@@ -196,13 +199,13 @@ export const viewMenu = async (role:Role) => {
 
     if (data.foodItems && data.foodItems.length > 0) {
       console.log("Complete Menu:");
-      const formattedFoodItems: IMenuItem[] = data.foodItems.map((foodItem: any) => ({
+      const formattedFoodItems: IMenuItem[] = data.foodItems.map((foodItem: IMenuItem) => ({
         id: foodItem.id,
         name: foodItem.name,
         price: foodItem.price,
-        availabilityStatus: foodItem.availabilityStatus ? 'available' : 'not available',
+        availabilityStatus: foodItem.availabilityStatus ,
         categoryName: foodItem.categoryName,
-        mealTypeNames: foodItem.mealTypeNames.length > 0 ? foodItem.mealTypeNames.join(', ') : null,
+        mealType: foodItem.mealType
       }));
 
       console.table(formattedFoodItems);
@@ -216,7 +219,6 @@ export const viewMenu = async (role:Role) => {
   
 };
 
-export const viewFeedbackOnItem = async () => {
 
-  return { message: "Viewed Feedback on Item" };
-};
+  
+

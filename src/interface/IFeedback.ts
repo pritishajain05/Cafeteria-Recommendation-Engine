@@ -1,7 +1,8 @@
 export interface IFeedback {
     id: number;
     userId: number;
-    message: string;
-    type: string;
+    foodItemId: number;
+    rating: number;
+    comment: string;
     date: Date;
-}
+  }

@@ -19,13 +19,13 @@ export const promptLogin = () => {
       socket.emit("login", { id: parseInt(employeeId), name });
     });
   });
-};
+}
 
-export const requestMenu = (role: Role) => {
+export const requestMenu = (role: Role ) => {
   socket.emit("getRoleBasedMenu", { role });
 };
 
-export const handleMenuOptionSelection = async (role: Role) => {
+export const handleMenuOptionSelection = async (role:Role) => {
   rl.question("Choose an option: ", async (option: string) => {
       switch (role) {
         case Role.Admin:

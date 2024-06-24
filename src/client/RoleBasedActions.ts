@@ -1,7 +1,9 @@
-import { addFoodItem, deleteFoodItem, updateFoodItem, viewFeedbackOnItem, viewMenu, viewMonthlyFeedback } from './AdminActions';
+import { addFoodItem, deleteFoodItem, updateFoodItem, viewMenu } from './AdminActions';
 import { Role } from '../enum/Role';
 import { socket } from './client';
 import { rl } from './clientOperation';
+import { rollOutMenuForNextDay, viewRecommendedFoodItems } from './ChefActions';
+import { selectFoodItemsForNextDay, viewFeedbackOnItem } from './EmployeeActions';
 
 export const handleAdminOption = async (option: string , role:Role) => {
     switch (option) {
@@ -15,13 +17,10 @@ export const handleAdminOption = async (option: string , role:Role) => {
         await deleteFoodItem(role);
         break;
       case "4":
-        await viewMonthlyFeedback();
-        break;
-      case "5":
         await viewMenu(role);
         break;
-      case "6":
-        await viewFeedbackOnItem();
+      case "5":
+        await viewFeedbackOnItem(role);
         break;
       case "logout":
         rl.close();
@@ -33,9 +32,18 @@ export const handleAdminOption = async (option: string , role:Role) => {
     }
   }
 
-export async function handleChefOption(option: string, role:Role) {
+export const handleChefOption  = async(option: string, role:Role) => {
     switch (option) {
       
+      case "1":
+        await viewMenu(role);
+        break;
+      case "2":
+        await viewRecommendedFoodItems(role);
+        break;
+      case "3":
+        await rollOutMenuForNextDay(role);
+        break;
       case "logout":
         rl.close();
         socket.close();
@@ -46,9 +54,17 @@ export async function handleChefOption(option: string, role:Role) {
     }
 }
 
-export async function handleEmployeeOption(option: string , role:Role) {
+export const handleEmployeeOption = async (option: string , role:Role)=> {
     switch (option) {
-
+      case "1":
+        await viewMenu(role);
+        break;
+      case "2":
+        await selectFoodItemsForNextDay(role);
+        break;
+      case "3":
+        await viewFeedbackOnItem(role);
+        break;
       case "logout":
         rl.close();
         socket.close();

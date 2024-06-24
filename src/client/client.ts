@@ -1,5 +1,9 @@
 import { io } from "socket.io-client";
-import { handleMenuOptionSelection, promptLogin, requestMenu } from "./clientOperation";
+import {
+  handleMenuOptionSelection,
+  promptLogin,
+  requestMenu,
+} from "./clientOperation";
 
 export const socket = io("http://localhost:3000");
 
@@ -8,15 +12,15 @@ socket.on("connect", () => {
   promptLogin();
 });
 
-socket.on("loginResponse", (data) => {
-  if (data.error) {
-    console.log(data.error);
-    promptLogin();
-  } else {
-    console.log(`Logged in as ${data.role}`);
-    requestMenu(data.role);
-  }
-});
+  socket.on("loginResponse", (data) => {
+    if (data.error) {
+      console.log(data.error);
+      promptLogin();
+    } else {
+      console.log(`Logged in as ${data.role}`);
+      requestMenu(data.role);
+    }
+  });
 
 socket.on("menuResponse", (data) => {
   if (data.error) {

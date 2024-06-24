@@ -12,6 +12,9 @@ export class AdminController {
        return await this.foodItemService.deleteFoodItem(itemName);
     }
 
+    async updateFoodItem (oldItemName:string,item:IFoodItem):Promise<{message:string , success: boolean}> {
+return await this.foodItemService.updateFoodItem(oldItemName,item);
+    }
 
 
 }

@@ -8,9 +8,8 @@ export const showMenu = (role: Role): string[] => {
                 "1. Add Food Item",
                 "2. Update Food Item",
                 "3. Delete Food Item",
-                "4. View Monthly Feedback Report",
-                "5. View Menu",
-                "6. View Feedback on particular item",
+                "4. View Menu",
+                "5. View Feedback on particular item",
                 "Type 'logout' to exit."
             ];
         case Role.Chef:
@@ -22,7 +21,6 @@ export const showMenu = (role: Role): string[] => {
                 "5. Finalize Menu Items",
                 "6. View Feedback on particular item",
                 "7. View Notifications",
-                "8. View Monthly Feedback Report",
                 "Type 'logout' to exit."
             ];
         case Role.Employee:

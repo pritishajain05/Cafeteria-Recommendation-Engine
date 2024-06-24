@@ -1,9 +1,8 @@
 import { RowDataPacket } from "mysql2";
 import { pool } from "../db";
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { ADD_FOOD_ITEM, ADD_FOOD_ITEM_MEAL_TYPE, CHECK_FOOD_ITEM_EXISTENCE, DELETE_FOOD_ITEM, GET_ALL_FOOD_CATEGORIES, LAST_INSERTED_ID, UPDATE_FOOD_ITEM } from "../utils/constant";
-import { IFoodItem, IMenuItem } from "../interface/IFoodItem";
-import { MealType } from "../enum/MealType";
+import { ADD_FOOD_ITEM, ADD_FOOD_ITEM_MEAL_TYPE, ADD_ROLLED_OUT_ITEMS, CHECK_FOOD_ITEM_EXISTENCE, DELETE_FOOD_ITEM, GET_ALL_FOOD_CATEGORIES, LAST_INSERTED_ID, UPDATE_FOOD_ITEM } from "../utils/constant";
+import { IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
 
 export class FoodItemRepository {
   async getAllCategories(): Promise<IFoodCategory[] | null> {
@@ -35,28 +34,18 @@ export class FoodItemRepository {
     }
   }
 
-  async addFoodItem(item: IFoodItem): Promise<number> {
+  async addFoodItem(item: IFoodItem): Promise<{ message: string , success:boolean}> {
     try {
       await pool.execute<RowDataPacket[]>(ADD_FOOD_ITEM, [
         item.name,
         item.price,
         item.availabilityStatus,
         item.foodCategoryId,
+        item.mealTypeId
       ]);
-      const [result] = await pool.execute<RowDataPacket[]>(LAST_INSERTED_ID);
-      const id = result[0].id;
-      return id;
+      return { message: "Item added successfully.",success:true };
     } catch (error) {
-      console.error("failed to add new item:", error);
-      throw error;
-    }
-  }
-
-  async addFoodItemMealType( foodItemId: number, mealTypeId: MealType): Promise<void> {
-    try {
-      await pool.execute(ADD_FOOD_ITEM_MEAL_TYPE, [foodItemId, mealTypeId]);
-    } catch (error) {
-      console.error("Error inserting food item meal type:", error);
+      return { message: `Error in adding food item: ${error}`,success:false };
     }
   }
 
@@ -69,14 +58,15 @@ export class FoodItemRepository {
     }
   }
 
-  async updateFoodItem(itemName: string, updatedFoodItem: IFoodItem): Promise<{ message: string, success: boolean }> {
+  async updateFoodItem(oldItemName: string, updatedFoodItem: IFoodItem): Promise<{ message: string, success: boolean }> {
     try {
       await pool.execute(UPDATE_FOOD_ITEM, [
         updatedFoodItem.name,
         updatedFoodItem.price,
         updatedFoodItem.availabilityStatus,
         updatedFoodItem.foodCategoryId,
-        itemName 
+        updatedFoodItem.mealTypeId,
+        oldItemName 
       ]);
       return { message: "Item updated successfully.", success: true };
     } catch (error) {
@@ -85,37 +75,75 @@ export class FoodItemRepository {
     }
   }
 
-  async getAllFoodItems(): Promise<IMenuItem[] | null> {
+  async getAllFoodItems(): Promise<IMenuItem[]> {
     try {
       const [rows] = await pool.query<RowDataPacket[]>(`
         SELECT fi.id AS foodItemId, fi.name AS foodItemName, fi.price AS foodItemPrice, fi.availabilityStatus AS availabilityStatus,
-               fc.name AS categoryName,
-               GROUP_CONCAT(mt.type ORDER BY mt.id SEPARATOR ', ') AS mealTypeNames
-        FROM foodItem fi
-        JOIN foodCategory fc ON fi.foodCategoryId = fc.id
-        LEFT JOIN foodItemMealType fmt ON fi.id = fmt.foodItemId
-        LEFT JOIN mealType mt ON fmt.mealTypeId = mt.id
-        GROUP BY fi.id
+             fc.name AS categoryName, mt.type AS mealType
+      FROM foodItem fi
+      JOIN foodCategory fc ON fi.foodCategoryId = fc.id
+      LEFT JOIN mealType mt ON fi.mealTypeId = mt.id
       `);
 
       if (rows.length === 0) {
-        return null; 
+        return [];
       }
 
       const foodItems: IMenuItem[] = rows.map((row) => ({
         id: row.foodItemId,
         name: row.foodItemName,
         price: row.foodItemPrice,
-        availabilityStatus: row.availabilityStatus === 1,
-        foodCategoryId: row.foodCategoryId, 
+        availabilityStatus: row.availabilityStatus ? 'available' : ' unavailable',
         categoryName: row.categoryName,
-        mealTypeNames: row.mealTypeNames ? row.mealTypeNames.split(', ') : [],
+        mealType: row.mealType ? row.mealType : "NULL"
       }));
 
       return foodItems;
     } catch (error) {
       console.error("Error fetching food items with details:", error);
-      return null;
+      return [];
+    }
+  };
+
+  async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
+    try {
+      await Promise.all(selectedIds.map(async (id) => {
+        await pool.execute(`INSERT INTO recommendedFoodItem (foodItemId, votes) VALUES (?, 0)`, [id]);
+      }));
+      return { message: "Selected items successfully rolled out." };
+    } catch (error) {
+      console.error("Error adding rolled out items:", error);
+      throw error;
     }
   }
+ 
+  async getRolledOutItems(): Promise<IRolledOutmenu[]> {
+    try {
+      const [rows] = await pool.query(`
+        SELECT fi.id AS foodItemId, fi.name AS foodItemName, fi.price AS foodItemPrice,
+               mt.type AS mealType
+        FROM recommendedFoodItem rfi
+        JOIN foodItem fi ON rfi.foodItemId = fi.id
+        JOIN mealType mt ON fi.mealTypeId = mt.id
+      `);
+
+      return rows as IRolledOutmenu[];
+    } catch (error) {
+      console.error("Error fetching recommended food items:", error);
+      throw error;
+    }
+  }
+
+  async addVoteForRolledOutItems(votedIds: number[]): Promise<{ message: string }> {
+    try {
+      await Promise.all(votedIds.map(async (id) => {
+        await pool.execute(`UPDATE recommendedFoodItem SET votes = votes + 1 WHERE foodItemId = ?`, [id]);
+      }));
+      return { message: "Voted Successfully" };
+    } catch (error) {
+      console.error("Error in voting:", error);
+      throw error;
+    }
+  }
+
 }
