@@ -55,6 +55,10 @@ async viewAllFoodItems(): Promise<IMenuItem[]| null>{
   return await this.foodItemRepository.getAllFoodItems();
 }
 
+async checkRolledOutMenu(): Promise<boolean> {
+  return await this.foodItemRepository.checkRolledOutMenu();
+}
+
 async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
 return await this.foodItemRepository.addRolledOutItems(selectedIds);
 }
@@ -67,6 +71,9 @@ async voteForRolledOutItems(votedIds: number[]) : Promise<{ message: string }>{
   return await this.foodItemRepository.addVoteForRolledOutItems(votedIds);
 }
 
+async addFinalFoodItem(items:IRolledOutmenu[]) :Promise<{ message: string, success: boolean }> {
+  return  await this.foodItemRepository.addFinalFoodItem(items);
+}
 }
 
 

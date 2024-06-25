@@ -1,10 +1,17 @@
 import { RowDataPacket } from "mysql2";
 import { pool } from "../db";
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { ADD_FOOD_ITEM, ADD_FOOD_ITEM_MEAL_TYPE, ADD_ROLLED_OUT_ITEMS, CHECK_FOOD_ITEM_EXISTENCE, DELETE_FOOD_ITEM, GET_ALL_FOOD_CATEGORIES, LAST_INSERTED_ID, UPDATE_FOOD_ITEM } from "../utils/constant";
+import { ADD_FOOD_ITEM, CHECK_FOOD_ITEM_EXISTENCE, DELETE_FOOD_ITEM, GET_ALL_FOOD_CATEGORIES, LAST_INSERTED_ID, UPDATE_FOOD_ITEM } from "../utils/constant";
 import { IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
 
 export class FoodItemRepository {
+
+  private currentDate: string;
+
+  constructor() {
+    this.currentDate = new Date().toISOString().split('T')[0]; 
+  }
+
   async getAllCategories(): Promise<IFoodCategory[] | null> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_ALL_FOOD_CATEGORIES);
@@ -108,7 +115,7 @@ export class FoodItemRepository {
   async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
     try {
       await Promise.all(selectedIds.map(async (id) => {
-        await pool.execute(`INSERT INTO recommendedFoodItem (foodItemId, votes) VALUES (?, 0)`, [id]);
+        await pool.execute(`INSERT INTO rolloutFoodItem (foodItemId, votes, rolloutDate) VALUES (?, 0,?)`, [id,this.currentDate]);
       }));
       return { message: "Selected items successfully rolled out." };
     } catch (error) {
@@ -117,15 +124,18 @@ export class FoodItemRepository {
     }
   }
  
+  
+
   async getRolledOutItems(): Promise<IRolledOutmenu[]> {
     try {
       const [rows] = await pool.query(`
-        SELECT fi.id AS foodItemId, fi.name AS foodItemName, fi.price AS foodItemPrice,
-               mt.type AS mealType
-        FROM recommendedFoodItem rfi
-        JOIN foodItem fi ON rfi.foodItemId = fi.id
-        JOIN mealType mt ON fi.mealTypeId = mt.id
-      `);
+        SELECT rfi.id AS id , rfi.votes , fi.id AS foodItemId, fi.name AS foodItemName, fi.price AS foodItemPrice,
+             mt.type AS mealType
+      FROM  rolloutFoodItem  rfi
+      JOIN foodItem fi ON rfi.foodItemId = fi.id
+      LEFT JOIN mealType mt ON fi.mealTypeId = mt.id
+      WHERE DATE(rfi.rolloutDate) = ?
+      `,[this.currentDate]);
 
       return rows as IRolledOutmenu[];
     } catch (error) {
@@ -134,10 +144,16 @@ export class FoodItemRepository {
     }
   }
 
+  async checkRolledOutMenu(): Promise<boolean> {
+    const [rows] = await pool.execute('SELECT COUNT(*) as count FROM rolloutFoodItem WHERE rolloutDate=?',[this.currentDate]);
+    const count = (rows as any)[0].count;
+    return count > 0;
+  }
+
   async addVoteForRolledOutItems(votedIds: number[]): Promise<{ message: string }> {
     try {
       await Promise.all(votedIds.map(async (id) => {
-        await pool.execute(`UPDATE recommendedFoodItem SET votes = votes + 1 WHERE foodItemId = ?`, [id]);
+        await pool.execute(`UPDATE rolloutFoodItem SET votes = votes + 1 WHERE foodItemId = ?`, [id]);
       }));
       return { message: "Voted Successfully" };
     } catch (error) {
@@ -146,4 +162,21 @@ export class FoodItemRepository {
     }
   }
 
+  async addFinalFoodItem(items:IRolledOutmenu[]) : Promise<{ message: string , success:boolean}> {
+    try {
+      await Promise.all(items.map(async (item) => {
+        await pool.execute(`
+          INSERT INTO finalFoodItem (rolloutFoodItemId, date)
+          VALUES (?, ?)
+        `, [item.id, this.currentDate]);
+      }));
+
+      return { message:"Finalized items stored successfully." , success:true}
+      
+    } catch (error) {
+      console.log("Error in adding final food items");
+      throw error;
+    }
+
+  }
 }

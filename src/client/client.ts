@@ -7,20 +7,23 @@ import {
 
 export const socket = io("http://localhost:3000");
 
+export let employeeId: number;
+
 socket.on("connect", () => {
   console.log("Connected to server");
   promptLogin();
 });
 
-  socket.on("loginResponse", (data) => {
-    if (data.error) {
-      console.log(data.error);
-      promptLogin();
-    } else {
-      console.log(`Logged in as ${data.role}`);
-      requestMenu(data.role);
-    }
-  });
+socket.on("loginResponse", (data) => {
+  if (data.error) {
+    console.log(data.error);
+    promptLogin();
+  } else {
+    employeeId = data.employeeId;
+    console.log(`Logged in as ${data.role}`);
+    requestMenu(data.role);
+  }
+});
 
 socket.on("menuResponse", (data) => {
   if (data.error) {
