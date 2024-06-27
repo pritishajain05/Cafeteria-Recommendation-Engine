@@ -120,11 +120,19 @@ export const rollOutMenuForNextDay = async (role: Role) => {
           socket.on("storeSelectedIdsResponse", (response) => {
             if (response.success) {
               console.log(response.message);
-              requestMenu(role);
+              socket.emit("sendNotificationToEmployees","New menu has been rolled out for the next day.1.Please vote for your preferred items.",false);
+              socket.off("employeeNotificationResponse");
+              socket.on("employeeNotificationResponse", (response) => {
+                if (response.success) {
+                  console.log(response.message);
+                } else {
+                  console.error(response.message);
+                }
+              });
             } else {
               console.error(response.message);
-              requestMenu(role);
             }
+            requestMenu(role);
           });
         });
       });
@@ -172,11 +180,19 @@ export const finalizeFoodItems = async (role: Role) => {
     socket.on("storefinalizedItemsResponse", (response) => {
       if (response.success) {
         console.log(response.message);
-        requestMenu(role);
+        socket.emit("sendNotificationToEmployees","Menu has been finalized for tomorrow ! \n 2. View final Menu",false);
+        socket.off("employeeNotificationResponse");
+        socket.on("employeeNotificationResponse", (response) => {
+          if (response.success) {
+            console.log(response.message);
+          } else {
+            console.error(response.message);
+          }
+        });
       } else {
         console.error(response.message);
-        requestMenu(role);
       }
+      requestMenu(role);
     });
   });
 };

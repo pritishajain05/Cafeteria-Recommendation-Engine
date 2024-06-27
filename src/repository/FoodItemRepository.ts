@@ -2,7 +2,7 @@ import { RowDataPacket } from "mysql2";
 import { pool } from "../db";
 import { IFoodCategory } from "../interface/IFoodCategory";
 import { ADD_FOOD_ITEM, CHECK_FOOD_ITEM_EXISTENCE, DELETE_FOOD_ITEM, GET_ALL_FOOD_CATEGORIES, LAST_INSERTED_ID, UPDATE_FOOD_ITEM } from "../utils/constant";
-import { IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
 
 export class FoodItemRepository {
 
@@ -177,6 +177,25 @@ export class FoodItemRepository {
       console.log("Error in adding final food items");
       throw error;
     }
-
   }
+
+  async getFinalFoodItem(): Promise<IFinalMenu[]> {
+    try {
+      const query = `
+        SELECT fi.id AS foodItemId, fi.name AS foodItemName, mt.type AS mealType
+        FROM finalFoodItem ffi
+        JOIN rolloutFoodItem rfi ON ffi.rolloutFoodItemId = rfi.id
+        JOIN foodItem fi ON rfi.foodItemId = fi.id
+        LEFT JOIN mealType mt ON fi.mealTypeId = mt.id
+        WHERE DATE(ffi.date) = ?
+      `;
+      const [rows] = await pool.execute<RowDataPacket[]>(query, [this.currentDate]);
+
+      return rows as IFinalMenu[];
+    } catch (error) {
+      console.error("Error fetching finalized menu:", error);
+      throw error;
+    }
+  }
+
 }

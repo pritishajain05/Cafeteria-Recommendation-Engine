@@ -23,3 +23,9 @@ export interface IRolledOutmenu {
   votes: number;
   mealType: string;
 }
+
+export interface IFinalMenu{
+    foodItemId: number,
+    foodItemName: string;
+    mealType: string
+}

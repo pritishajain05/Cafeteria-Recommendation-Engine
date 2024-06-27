@@ -1,7 +1,7 @@
 import { updateFoodItem } from "../client/AdminActions";
 import { MealType } from "../enum/MealType";
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
 import { FoodItemRepository } from "../repository/FoodItemRepository";
 import { ADD_ROLLED_OUT_ITEMS } from './../utils/constant';
 
@@ -74,6 +74,11 @@ async voteForRolledOutItems(votedIds: number[]) : Promise<{ message: string }>{
 async addFinalFoodItem(items:IRolledOutmenu[]) :Promise<{ message: string, success: boolean }> {
   return  await this.foodItemRepository.addFinalFoodItem(items);
 }
+
+async getFinalFoodItem():Promise<IFinalMenu[]>{
+  return await this.foodItemRepository.getFinalFoodItem();
+}
+
 }
 
 

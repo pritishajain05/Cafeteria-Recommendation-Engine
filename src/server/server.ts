@@ -9,6 +9,7 @@ import { FoodItemRepository } from "../repository/FoodItemRepository";
 import { RecommendationService } from "../service/RecommendationService";
 import { FeedbackService } from "../service/FeedbackService";
 import { IFeedback } from "../interface/IFeedback";
+import { NotificationService } from "../service/NotificationService";
 
 const server = http.createServer();
 const io = new Server(server);
@@ -19,6 +20,7 @@ const foodItemService = new FoodItemService();
 const foodItemRepository = new FoodItemRepository();
 const recommendationService = new RecommendationService();
 const feedbackService = new FeedbackService();
+const notificationService = new NotificationService();
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -226,6 +228,52 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.log("Error in adding feedback", error);
       socket.emit("addFeedbackresponse", { success: false, message: error });
+    }
+  });
+
+  socket.on("sendNotificationToChefAndEmployee", async (message,isSeen) => {
+    try {
+      await notificationService.sendNotificationToChefAndEmployee(message,isSeen);
+      socket.emit("chefAndEmployeeNotificationResponse", { success: true, message: "Notification sent to all users" });
+    } catch (error) {
+      socket.emit("chefAndEmployeeNotificationResponse", { success: false, message: `Failed to send notification: ${error}` });
+    }
+  });
+
+  socket.on("sendNotificationToEmployees", async (message,isSeen) => {
+    try {
+      await notificationService.sendNotificationToEmployees(message,isSeen);
+      socket.emit("employeeNotificationResponse", { success: true, message: "Notification sent to employees" });
+    } catch (error) {
+      socket.emit("employeeNotificationResponse", { success: false, message: `Failed to send notification: ${error}` });
+    }
+  });
+
+  socket.on("getNotifications", async (employeeId) => {
+    try {
+      const notifications = await notificationService.getNotifications(employeeId);
+      socket.emit("getNotificationsResponse", { notifications: notifications });
+    } catch (error) {
+      socket.emit("getNotificationsResponse", { error: "Failed to fetch notifications" });
+    }
+  });
+
+  socket.on("getFinalizedMenu", async () => {
+    try {
+      const finalMenu = await foodItemService.getFinalFoodItem();
+      socket.emit("finalizedMenuResponse", { finalMenu });
+    } catch (error) {
+      socket.emit("finalizedMenuResponse", { error });
+    }
+  });
+
+  socket.on("markNotificationAsSeen", async ({ notificationId, employeeId }) => {
+    try {
+      const response  = await notificationService.markNotificationAsSeen(notificationId, employeeId);
+      console.log(response);
+      socket.emit("markNotificationAsSeenResponse", { success: response.success });
+    } catch (error) {
+      socket.emit("markNotificationAsSeenResponse", { success: false });
     }
   });
 

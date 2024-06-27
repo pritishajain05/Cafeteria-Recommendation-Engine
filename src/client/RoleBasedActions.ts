@@ -16,6 +16,7 @@ import {
   giveFeedbackOnItem,
   selectFoodItemsForNextDay,
   viewFeedbackOnItem,
+  viewNotification,
 } from "./EmployeeActions";
 
 export const handleAdminOption = async (option: string, role: Role) => {
@@ -59,6 +60,9 @@ export const handleChefOption = async (option: string, role: Role) => {
     case "4":
       await finalizeFoodItems(role);
       break;
+    case "6":
+      await viewNotification(role);
+      break;
     case "logout":
       rl.close();
       socket.close();
@@ -82,6 +86,9 @@ export const handleEmployeeOption = async (option: string, role: Role) => {
       break;
     case "4":
       await giveFeedbackOnItem(role);
+      break;
+      case "5":
+      await viewNotification(role);
       break;
     case "logout":
       rl.close();
