@@ -4,7 +4,6 @@ import { IFinalMenu, IRolledOutmenu } from "./../interface/IFoodItem";
 import { requestMenu, rl } from "./clientOperation";
 import { INotification } from "../interface/INotification";
 
-
 const promptUserForIds = (mealType: string) => {
   return new Promise<number[]>((resolve) => {
     rl.question(
@@ -142,87 +141,92 @@ export const giveFeedbackOnItem = async (role: Role) => {
 };
 
 export const viewNotification = async (role: Role) => {
-    socket.emit("getNotifications", employeeId);
-  
-    socket.off("getNotificationsResponse");
-    socket.on("getNotificationsResponse", (data) => {
-      if (data.error) {
-        console.error("Error fetching notifications:", data.error);
-        return;
-      }
-  
-      if (data.notifications && data.notifications.length > 0) {
-        console.log("Notifications:");
-        data.notifications.forEach((notification:INotification) => {
-            console.log('-------------------');
-            console.log(`Message: ${notification.message}`);
-            console.log(`Date: ${notification.date}`);
-            console.log('-------------------');
+  socket.emit("getNotifications", employeeId);
 
-            if (!notification.isSeen) {
-                socket.emit("markNotificationAsSeen", {
-                  notificationId: notification.id,
-                  employeeId: employeeId,
-                });
-              }
-          });
+  socket.off("getNotificationsResponse");
+  socket.on("getNotificationsResponse", (data) => {
+    if (data.error) {
+      console.error("Error fetching notifications:", data.error);
+      return;
+    }
 
-        rl.question(
-          "Enter your choice: \n Type exit to return to main menu",
-          (choice) => {
-            switch (choice) {
-              case "1":
-                selectFoodItemsForNextDay(role);
-                break;
-              case "2":
-                viewFinalMenu(role);
-                break;
-              case "exit":
-                requestMenu(role);
-                break;
-              default:
-                console.log("Invalid choice. Please enter 1 or 2.");
-                viewNotification(role);
-            }
+    if (data.notifications && data.notifications.length > 0) {
+      console.log("Notifications:");
+      data.notifications.forEach((notification: INotification) => {
+        console.log("-------------------");
+        console.log(`Message: ${notification.message}`);
+        console.log(`Date: ${notification.date}`);
+        console.log("-------------------");
+
+        if (!notification.isSeen) {
+          socket.emit("markNotificationAsSeen", {
+            notificationId: notification.id,
+            employeeId: employeeId,
+          });    
+        }
+      });
+
+      rl.question(
+        "Enter your choice: \n Type exit to return to main menu",
+        (choice) => {
+          switch (choice) {
+            case "1":
+              selectFoodItemsForNextDay(role);
+              break;
+            case "2":
+              viewFinalMenu(role);
+              break;
+            case "exit":
+              requestMenu(role);
+              break;
+            default:
+              console.log("Invalid choice. Please enter 1 or 2.");
+              viewNotification(role);
           }
-        );
-      } else {
-        console.log("No new notifications.");
-        requestMenu(role);
-      }
-    });
-  };
+        }
+      );
+    } else {
+      console.log("No new notifications.");
+      requestMenu(role);
+    }
+  });
+};
 
-  const viewFinalMenu = async (role: Role) => {
-    socket.emit("getFinalizedMenu");
-  
-    socket.off("finalizedMenuResponse");
-    socket.on("finalizedMenuResponse", (data) => {
-      if (data.error) {
-        console.error("Error fetching final menu:", data.error);
-        return;
-      }
-  
-      if (data.finalMenu && data.finalMenu.length > 0) {
-        console.log("Finalized Menu for Tomorrow:");
-        const breakfastItems = data.filter((item:IFinalMenu) => item.mealType === "Breakfast");
-        const lunchItems = data.filter((item:IFinalMenu) => item.mealType === "Lunch");
-        const dinnerItems = data.filter((item:IFinalMenu) => item.mealType === "Dinner");
-    
-        console.log("Breakfast Items:");
-        console.table(breakfastItems);
-    
-        console.log("Lunch Items:");
-        console.table(lunchItems);
-    
-        console.log("Dinner Items:");
-        console.table(dinnerItems);
+const viewFinalMenu = async (role: Role) => {
+  socket.emit("getFinalizedMenu");
 
-        viewNotification(role);
-      } else {
-        console.log("No finalized menu available.");
-        viewNotification(role);
-      }
-    
-    });
-  };
+  socket.off("finalizedMenuResponse");
+  socket.on("finalizedMenuResponse", (data) => {
+    if (data.error) {
+      console.error("Error fetching final menu:", data.error);
+      return;
+    }
+
+    if (data.finalMenu && data.finalMenu.length > 0) {
+      console.log("Finalized Menu for Tomorrow:");
+      const breakfastItems = data.filter(
+        (item: IFinalMenu) => item.mealType === "Breakfast"
+      );
+      const lunchItems = data.filter(
+        (item: IFinalMenu) => item.mealType === "Lunch"
+      );
+      const dinnerItems = data.filter(
+        (item: IFinalMenu) => item.mealType === "Dinner"
+      );
+
+      console.log("Breakfast Items:");
+      console.table(breakfastItems);
+
+      console.log("Lunch Items:");
+      console.table(lunchItems);
+
+      console.log("Dinner Items:");
+      console.table(dinnerItems);
+
+      viewNotification(role);
+    } else {
+      console.log("No finalized menu available.");
+      viewNotification(role);
+    }
+  });
+};

@@ -37,13 +37,14 @@ export class NotificationRepository {
     return rows.map(row => row.employeeId);
   }
 
-  async markNotificationAsSeen(employeeId: number, notificationId: number): Promise<{success:boolean}> {
+  async markNotificationAsSeen(notificationId: number, employeeId: number): Promise<{ success: boolean }> {
     const query = `
         UPDATE notification
         SET isSeen = TRUE
-        WHERE employeeId = ? AND id = ?
+        WHERE id = ? AND employeeId = ?
     `;
-    await pool.execute(query, [employeeId, notificationId]);
-    return { success:true}
+    const [result] = await pool.execute(query, [notificationId, employeeId]);
+    return { success: true };
 }
+
 }

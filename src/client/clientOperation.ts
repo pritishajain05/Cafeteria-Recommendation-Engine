@@ -7,7 +7,6 @@ import {
 } from "./RoleBasedActions";
 import { socket } from "./client";
 
-
 export const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
