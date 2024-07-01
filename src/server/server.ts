@@ -10,6 +10,8 @@ import { RecommendationService } from "../service/RecommendationService";
 import { FeedbackService } from "../service/FeedbackService";
 import { IFeedback } from "../interface/IFeedback";
 import { NotificationService } from "../service/NotificationService";
+import { UserService } from "../service/UserService";
+import { IUserPreferences } from "../interface/IUserPreferences";
 
 const server = http.createServer();
 const io = new Server(server);
@@ -21,6 +23,7 @@ const foodItemRepository = new FoodItemRepository();
 const recommendationService = new RecommendationService();
 const feedbackService = new FeedbackService();
 const notificationService = new NotificationService();
+const userService = new UserService();
 
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -231,30 +234,49 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("sendNotificationToChefAndEmployee", async (message,isSeen) => {
+  socket.on("sendNotificationToChefAndEmployee", async (message, isSeen) => {
     try {
-      await notificationService.sendNotificationToChefAndEmployee(message,isSeen);
-      socket.emit("chefAndEmployeeNotificationResponse", { success: true, message: "Notification sent to all users" });
+      await notificationService.sendNotificationToChefAndEmployee(
+        message,
+        isSeen
+      );
+      socket.emit("chefAndEmployeeNotificationResponse", {
+        success: true,
+        message: "Notification sent to all users",
+      });
     } catch (error) {
-      socket.emit("chefAndEmployeeNotificationResponse", { success: false, message: `Failed to send notification: ${error}` });
+      socket.emit("chefAndEmployeeNotificationResponse", {
+        success: false,
+        message: `Failed to send notification: ${error}`,
+      });
     }
   });
 
-  socket.on("sendNotificationToEmployees", async (message,isSeen) => {
+  socket.on("sendNotificationToEmployees", async (message, isSeen) => {
     try {
-      await notificationService.sendNotificationToEmployees(message,isSeen);
-      socket.emit("employeeNotificationResponse", { success: true, message: "Notification sent to employees" });
+      await notificationService.sendNotificationToEmployees(message, isSeen);
+      socket.emit("employeeNotificationResponse", {
+        success: true,
+        message: "Notification sent to employees",
+      });
     } catch (error) {
-      socket.emit("employeeNotificationResponse", { success: false, message: `Failed to send notification: ${error}` });
+      socket.emit("employeeNotificationResponse", {
+        success: false,
+        message: `Failed to send notification: ${error}`,
+      });
     }
   });
 
   socket.on("getNotifications", async (employeeId) => {
     try {
-      const notifications = await notificationService.getNotifications(employeeId);
+      const notifications = await notificationService.getNotifications(
+        employeeId
+      );
       socket.emit("getNotificationsResponse", { notifications: notifications });
     } catch (error) {
-      socket.emit("getNotificationsResponse", { error: "Failed to fetch notifications" });
+      socket.emit("getNotificationsResponse", {
+        error: "Failed to fetch notifications",
+      });
     }
   });
 
@@ -267,15 +289,97 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("markNotificationAsSeen", async ({ notificationId, employeeId }) => {
+  socket.on(
+    "markNotificationAsSeen",
+    async ({ notificationId, employeeId }) => {
+      try {
+        const response = await notificationService.markNotificationAsSeen(
+          notificationId,
+          employeeId
+        );
+        socket.emit("markNotificationAsSeenResponse", {
+          success: response.success,
+        });
+      } catch (error) {
+        socket.emit("markNotificationAsSeenResponse", { success: false });
+      }
+    }
+  );
+
+  socket.on("getDiscardFooditems", async () => {
     try {
-      const response  = await notificationService.markNotificationAsSeen(notificationId, employeeId);
-      console.log(response);
-      socket.emit("markNotificationAsSeenResponse", { success: response.success });
+      await recommendationService.getDiscardFoodItems();
+      const discardFoodItems = await foodItemRepository.getDiscardFoodItems();
+      socket.emit("getDiscardFoodItemResponse", {discardFoodItems});
     } catch (error) {
-      socket.emit("markNotificationAsSeenResponse", { success: false });
+      console.error("Error generating discard items", error);
+      socket.emit("getDiscardFoodItemResponse", {error:"error generating discard items"});
     }
   });
+
+  socket.on(
+    "updateUserPreferences",
+    async (employeeId: number, preferences: IUserPreferences) => {
+      try {
+        const response = await userService.updateUserPreferences(
+          employeeId,
+          preferences
+        );
+        socket.emit("updateUserPreferencesResponse", {success:response.success , message:response.message});
+      } catch (error) {
+        console.log(error);
+        socket.emit("updateUserPreferencesResponse", {success: false , message:error});
+      }
+    }
+  );
+
+ 
+  socket.on("storeFeedbackQuestions", async (itemName:string, questions:string[]) => {
+    try {
+        const response = await feedbackService.storeDetailedFeedbackQuestions(itemName, questions);
+        socket.emit("storeFeedbackQuestionsResponse", {
+            success: response.success,
+            message: response.message
+        });
+    } catch (error) {
+        console.error(`Failed to store questions: ${error}`);
+        socket.emit("storeFeedbackQuestionsResponse", {
+            success: false,
+            message: error
+        });
+    }
+});
+
+socket.on('getFeedbackQuestions', async () => {
+  try {
+    const questions = await feedbackService.getFeedbackQuestions();
+    socket.emit('feedbackQuestionsResponse', { questions });
+  } catch (error) {
+    console.error('Error fetching feedback questions:', error);
+    socket.emit('feedbackQuestionsResponse', { error });
+  }
+});
+
+socket.on('getEmployeeFeedbackAnswers', async ({ employeeId }) => {
+  try {
+    const answers = await feedbackService.getEmployeeFeedbackAnswers(employeeId);
+    socket.emit('employeeFeedbackAnswersResponse', { answers });
+  } catch (error) {
+    console.error('Error fetching employee feedback answers:', error);
+    socket.emit('employeeFeedbackAnswersResponse', { error });
+  }
+});
+
+socket.on('storeFeedbackAnswers', async (answers) => {
+  try {
+    await feedbackService.storeFeedbackAnswers(answers);
+    socket.emit('storeFeedbackAnswersResponse', { success: true, message: 'Feedback answers stored successfully.' });
+  } catch (error) {
+    console.error('Error storing feedback answers:', error);
+    socket.emit('storeFeedbackAnswersResponse', { success: false, message: error});
+  }
+});
+
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");

@@ -10,12 +10,16 @@ import { rl } from "./clientOperation";
 import {
   finalizeFoodItems,
   rollOutMenuForNextDay,
+  viewDiscardFoodItems,
   viewRecommendedFoodItems,
 } from "./ChefActions";
 import {
+  giveDetailedFeedback,
   giveFeedbackOnItem,
   selectFoodItemsForNextDay,
+  updateProfile,
   viewFeedbackOnItem,
+  viewFinalMenu,
   viewNotification,
 } from "./EmployeeActions";
 
@@ -35,6 +39,9 @@ export const handleAdminOption = async (option: string, role: Role) => {
       break;
     case "5":
       await viewFeedbackOnItem(role);
+      break;
+    case "6":
+      await viewDiscardFoodItems(role);
       break;
     case "logout":
       rl.close();
@@ -63,6 +70,9 @@ export const handleChefOption = async (option: string, role: Role) => {
     case "6":
       await viewNotification(role);
       break;
+    case "7":
+      await viewDiscardFoodItems(role);
+      break;
     case "logout":
       rl.close();
       socket.close();
@@ -87,8 +97,17 @@ export const handleEmployeeOption = async (option: string, role: Role) => {
     case "4":
       await giveFeedbackOnItem(role);
       break;
-      case "5":
+    case "5":
       await viewNotification(role);
+      break;
+    case "6":
+      await updateProfile(role);
+      break;
+    case "7":
+      await viewFinalMenu(role);
+      break;
+    case "8":
+      await giveDetailedFeedback(role);
       break;
     case "logout":
       rl.close();
@@ -99,3 +118,5 @@ export const handleEmployeeOption = async (option: string, role: Role) => {
       console.log("Invalid option.");
   }
 };
+
+

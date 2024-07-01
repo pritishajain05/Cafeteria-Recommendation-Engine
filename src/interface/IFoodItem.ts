@@ -24,8 +24,17 @@ export interface IRolledOutmenu {
   mealType: string;
 }
 
-export interface IFinalMenu{
-    foodItemId: number,
-    foodItemName: string;
-    mealType: string
+export interface IFinalMenu {
+  foodItemId: number;
+  foodItemName: string;
+  mealType: string;
+}
+
+export interface IDiscardFoodItem {
+  id?:number,
+  foodItemId: number,
+  foodItemName: string,
+  averageRating: number,
+  averageSentiment: number,
+  date?: Date
 }

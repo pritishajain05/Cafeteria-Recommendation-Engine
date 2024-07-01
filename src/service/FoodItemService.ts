@@ -1,7 +1,7 @@
 import { updateFoodItem } from "../client/AdminActions";
 import { MealType } from "../enum/MealType";
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IDiscardFoodItem, IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
 import { FoodItemRepository } from "../repository/FoodItemRepository";
 import { ADD_ROLLED_OUT_ITEMS } from './../utils/constant';
 

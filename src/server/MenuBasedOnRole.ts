@@ -9,6 +9,7 @@ export const showMenu = (role: Role): string[] => {
         "3. Delete Food Item",
         "4. View Menu",
         "5. View Feedback on particular item",
+        "6. View Discard Food Items",
         "Type 'logout' to exit.",
       ];
     case Role.Chef:
@@ -19,6 +20,7 @@ export const showMenu = (role: Role): string[] => {
         "4. Finalize Menu Items",
         "5. View Feedback on particular item",
         "6. View Notifications",
+        "7. View Discard Food Items",
         "Type 'logout' to exit.",
       ];
     case Role.Employee:
@@ -28,6 +30,9 @@ export const showMenu = (role: Role): string[] => {
         "3. View Feedback on particular item",
         "4. Give Feedback",
         "5. View Notifications",
+        "6. updateProfile",
+        "7. viewFinalMenu",
+        "8. Give Detailed Feedback on Discarded items",
         "Type 'logout' to exit.",
       ];
     default:

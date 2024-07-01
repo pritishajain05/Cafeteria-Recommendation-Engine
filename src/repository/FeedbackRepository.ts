@@ -1,20 +1,27 @@
 import { pool } from "../db";
-import { IFeedback } from "../interface/IFeedback";
+import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion, IFeedback } from "../interface/IFeedback";
 import { RowDataPacket } from "mysql2";
+import {
+  ADD_DETAILED_FEEDBACK_QUESTION,
+  ADD_FEEDBACK_ON_ITEM,
+  CHECK_FEEDBACK_FOR_TODAY,
+  GET_ALL_DETAILED_FEEDBACK_QUESTIONS,
+  GET_ALL_FEEDBACK,
+  GET_EMPLOYEE_FEEDBACK_ANSWERS,
+  GET_FEEDBACK_BY_FOODITEM_ID,
+  STORE_FEEDBACK_ANSWERS,
+} from "../utils/constant";
 
 export class FeedbackRepository {
+  private currentDate: string;
 
-    private currentDate: string;
-
-    constructor() {
-      this.currentDate = new Date().toISOString().split('T')[0]; 
-    }
+  constructor() {
+    this.currentDate = new Date().toISOString().split('T')[0];
+  }
 
   async getAllFeedback(): Promise<IFeedback[]> {
     try {
-      const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT * FROM feedback"
-      );
+      const [rows] = await pool.execute<RowDataPacket[]>(GET_ALL_FEEDBACK);
       return rows as IFeedback[];
     } catch (error) {
       console.error("Error fetching all feedbacks:", error);
@@ -24,20 +31,21 @@ export class FeedbackRepository {
 
   async getFeedbackByFoodItemId(id: number): Promise<IFeedback[]> {
     try {
-        const [rows] = await pool.execute<RowDataPacket[]>(
-          "SELECT * FROM feedback WHERE foodItemId = ?", [id]
-        );
-        return rows as IFeedback[];
-      } catch (error) {
-        console.error("Error fetching feedback by food item ID:", error);
-        throw error;
-      }
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        GET_FEEDBACK_BY_FOODITEM_ID,
+        [id]
+      );
+      return rows as IFeedback[];
+    } catch (error) {
+      console.error("Error fetching feedback by food item ID:", error);
+      throw error;
+    }
   }
 
-  async hasFeedbackForToday(data:IFeedback): Promise<boolean> {
+  async hasFeedbackForToday(data: IFeedback): Promise<boolean> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT * FROM feedback WHERE employeeId = ? AND foodItemId = ? AND date= ?",
+        CHECK_FEEDBACK_FOR_TODAY,
         [data.employeeId, data.foodItemId, this.currentDate]
       );
       return rows.length > 0;
@@ -47,52 +55,65 @@ export class FeedbackRepository {
     }
   }
 
-  async findRolloutFoodItemId(foodItemId: number): Promise<number | null> {
+  async addFeedbackOnItem(data: IFeedback): Promise<{ message: string, success: boolean }> {
     try {
-      const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT id FROM rolloutFoodItem WHERE foodItemId = ? AND DATE(rolloutDate) = DATE(?)",
-        [foodItemId, this.currentDate]
-      );
-      if (rows.length > 0) {
-        return rows[0].id;
-      } else {
-        return null;
-      }
+      await pool.execute(ADD_FEEDBACK_ON_ITEM, [
+        data.employeeId,
+        data.foodItemId,
+        data.rating,
+        data.comment,
+        this.currentDate
+      ]);
+      return { message: "Feedback added successfully!", success: true };
     } catch (error) {
-      console.error("Error finding rollout food item ID:", error);
+      console.error("Error adding the feedback:", error);
       throw error;
     }
   }
 
-  async isItemInFinalMenu(data:IFeedback): Promise<boolean> {
+  async storeDetailedFeedbackQuestions(itemName: string, questions: string[]): Promise<{ message: string, success: boolean }> {
     try {
-      const rolloutFoodItemId = await this.findRolloutFoodItemId(data.foodItemId);
-      if (rolloutFoodItemId === null) {
-        return false; 
-      }
-
-      const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT * FROM finalFoodItem WHERE rolloutFoodItemId = ? AND date = ? ",
-        [rolloutFoodItemId, this.currentDate]
+      await Promise.all(
+        questions.map(async (question) => {
+          await pool.execute(ADD_DETAILED_FEEDBACK_QUESTION, [itemName, question, this.currentDate]);
+        })
       );
-      return rows.length > 0;
+
+      return { success: true, message: `Questions stored successfully for ${itemName}.` };
     } catch (error) {
-      console.error("Error checking if item is in final menu:", error);
+      console.error(`Failed to store questions: ${error}`);
       throw error;
     }
   }
 
-  async addFeedbackOnItem ( data:IFeedback) : Promise<{ message: string, success: boolean }>{
+  async getFeedbackQuestions(): Promise<IDetailedFeedbackQuestion[]> {
     try {
-        await pool.execute(`
-            INSERT INTO feedback (employeeId, foodItemId, rating, comment, date)
-            VALUES (?, ?, ?, ?, ?)
-          `, [data.employeeId, data.foodItemId, data.rating, data.comment, this.currentDate]);
-
-          return { message: "Feedback added successfully!",success:true };
+      const [rows] = await pool.execute<RowDataPacket[]>(GET_ALL_DETAILED_FEEDBACK_QUESTIONS);
+      return rows as IDetailedFeedbackQuestion[];
     } catch (error) {
-        console.error("Error adding the feedback", error);
-        throw error;
+      console.error("Error fetching feedback questions:", error);
+      throw error;
+    }
+  }
+
+  async getEmployeeFeedbackAnswers(employeeId: number): Promise<IDetailedFeedbackAnswer[]> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(GET_EMPLOYEE_FEEDBACK_ANSWERS, [employeeId]);
+      return rows as IDetailedFeedbackAnswer[];
+    } catch (error) {
+      console.error("Error fetching employee feedback answers:", error);
+      throw error;
+    }
+  }
+
+  async storeFeedbackAnswers(answers: IDetailedFeedbackAnswer[]): Promise<void> {
+    try {
+      const query = STORE_FEEDBACK_ANSWERS;
+      const values = answers.map(answer => [answer.questionId, answer.employeeId, answer.answer, this.currentDate]);
+      await pool.query(query, [values]);
+    } catch (error) {
+      console.error("Error storing feedback answers:", error);
+      throw error;
     }
   }
 }

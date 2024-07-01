@@ -2,30 +2,35 @@ import { positiveWords, negativeWords, positiveSentences, negativeSentences } fr
 import { FoodItemRepository } from '../repository/FoodItemRepository';
 import { FeedbackRepository } from '../repository/FeedbackRepository';
 import { IFeedback } from '../interface/IFeedback';
-import { IMenuItem } from '../interface/IFoodItem';
+import { IDiscardFoodItem, IMenuItem } from '../interface/IFoodItem';
 
 export class RecommendationService {
 
   private foodItemRepository = new FoodItemRepository();
   private feedbackRepository = new FeedbackRepository();
+  private foodItems: IMenuItem[] = [];
+  private feedbacks: IFeedback[] = [];
+
+  constructor() {
+    this.initializeData(); 
+  }
+
+  private async initializeData(): Promise<void> {
+    try {
+      this.foodItems = await this.foodItemRepository.getAllFoodItems();
+      this.feedbacks = await this.feedbackRepository.getAllFeedback();
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      throw error;
+    }
+  }
 
   async getTopItemsForMealType(mealType: string, topN: number): Promise<IMenuItem[]> {
     try {
-      const foodItems: IMenuItem[] = await this.foodItemRepository.getAllFoodItems(); 
-      const feedbacks: IFeedback[] = await this.feedbackRepository.getAllFeedback(); 
 
-      const feedbackMap: Map<number, { totalRating: number; totalSentiment: number; count: number }> = new Map();
-
-      feedbacks.forEach(feedback => {
-        const sentimentScore = this.analyzeSentiment(feedback.comment);
-        const item = feedbackMap.get(feedback.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0 };
-        item.totalRating += feedback.rating;
-        item.totalSentiment += sentimentScore;
-        item.count += 1;
-        feedbackMap.set(feedback.foodItemId, item);
-      });
-
-      const filteredItems = foodItems.filter(item => item.mealType.includes(mealType) && item.availabilityStatus);
+      const feedbackMap = this.calculateFeedbackMap();
+    
+      const filteredItems = this.foodItems.filter(item => item.mealType.includes(mealType) && item.availabilityStatus);
 
       const scoredItems = filteredItems.map(item => {
         const feedback = feedbackMap.get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0 };
@@ -48,7 +53,24 @@ export class RecommendationService {
     }
   }
 
-  analyzeSentiment(comment: string): number {
+  
+  private calculateFeedbackMap() :Map<number, { totalRating: number; totalSentiment: number; count: number }> {
+    const feedbackMap: Map<number, { totalRating: number; totalSentiment: number; count: number }> = new Map();
+
+    this.feedbacks.forEach(feedback => {
+      const sentimentScore = this.analyzeSentiment(feedback.comment);
+      const item = feedbackMap.get(feedback.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0 };
+      item.totalRating += feedback.rating;
+      item.totalSentiment += sentimentScore;
+      item.count += 1;
+      feedbackMap.set(feedback.foodItemId, item);
+    });
+
+    return feedbackMap;
+
+  }
+
+  private analyzeSentiment(comment: string): number {
     let sentimentScore = 0;
     let wordCount = 0;
 
@@ -76,12 +98,13 @@ export class RecommendationService {
     return normalizedSentimentScore;
   }
 
-  calculateScore(averageRating: number, averageSentiment: number): number {
+  private calculateScore(averageRating: number, averageSentiment: number): number {
     const weightAverageRating = 0.5;
     const weightSentiment = 0.5;
 
     return (weightAverageRating * averageRating) + (weightSentiment * averageSentiment);
   }
+
 
   async recommendationEngine(): Promise<{ topBreakfastItems: IMenuItem[], topLunchItems: IMenuItem[], topDinnerItems: IMenuItem[] }> {
     try {
@@ -95,6 +118,34 @@ export class RecommendationService {
       console.error("Error generating recommendations:", error);
       throw error;
     } 
+  }
+  
+    async getDiscardFoodItems(): Promise<void> {
+      try {
+        const discardFoodItems: IDiscardFoodItem[] = [];
+
+        this.foodItems.forEach(item => {
+          const feedback = this.calculateFeedbackMap().get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0 };
+          const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
+          const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
+  
+          if (averageRating < 2 && averageSentiment < 0) {
+            discardFoodItems.push({
+              foodItemId: item.id,
+              foodItemName: item.name,
+              averageRating : parseFloat(averageRating.toFixed(2)),
+              averageSentiment : parseFloat(averageSentiment.toFixed(2))
+            });
+          }
+        });
+
+        console.table(discardFoodItems);
+        await this.foodItemRepository.addDiscardFoodItems(discardFoodItems);
+
+      } catch (error) {
+        console.error("Error fetching discard food items:", error);
+        throw error;
+      }
   }
 }
 

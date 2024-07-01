@@ -120,7 +120,11 @@ export const rollOutMenuForNextDay = async (role: Role) => {
           socket.on("storeSelectedIdsResponse", (response) => {
             if (response.success) {
               console.log(response.message);
-              socket.emit("sendNotificationToEmployees","New menu has been rolled out for the next day.1.Please vote for your preferred items.",false);
+              socket.emit(
+                "sendNotificationToEmployees",
+                "New menu has been rolled out for the next day.\n Press 1 --> Please vote for your preferred items.",
+                false
+              );
               socket.off("employeeNotificationResponse");
               socket.on("employeeNotificationResponse", (response) => {
                 if (response.success) {
@@ -151,9 +155,6 @@ export const finalizeFoodItems = async (role: Role) => {
     }
 
     const rolledOutMenu: IRolledOutmenu[] = data.rolledOutMenu;
-
-    console.log(rolledOutMenu);
-
     const topBreakfastItem = findTopVotedItem(rolledOutMenu, "Breakfast");
     const topLunchItem = findTopVotedItem(rolledOutMenu, "Lunch");
     const topDinnerItem = findTopVotedItem(rolledOutMenu, "Dinner");
@@ -180,7 +181,11 @@ export const finalizeFoodItems = async (role: Role) => {
     socket.on("storefinalizedItemsResponse", (response) => {
       if (response.success) {
         console.log(response.message);
-        socket.emit("sendNotificationToEmployees","Menu has been finalized for tomorrow ! \n 2. View final Menu",false);
+        socket.emit(
+          "sendNotificationToEmployees",
+          "Menu has been finalized for tomorrow ! \n Press 2 --> View final Menu",
+          false
+        );
         socket.off("employeeNotificationResponse");
         socket.on("employeeNotificationResponse", (response) => {
           if (response.success) {
@@ -206,4 +211,83 @@ const findTopVotedItem = (
     return undefined;
   }
   return filteredItems.sort((a, b) => b.votes - a.votes)[0];
+};
+
+export const viewDiscardFoodItems = async (role: Role) => {
+  socket.emit("getDiscardFooditems");
+  socket.off("getDiscardFoodItemResponse");
+  socket.on("getDiscardFoodItemResponse", (data) => {
+  
+    if (data.error) {
+      console.error("Error fetching discard menu items:", data.error);
+      return;
+    }
+
+    console.log("Discard Menu Item List:");
+    console.table(data.discardFoodItems);
+
+    rl.question(
+      `Would you like to \n (1) Remove an item or \n (2) Get detailed feedback? or \n exit to return to main Menu `,
+      async (answer) => {
+        if (answer === "1") {
+          rl.question(
+            "Enter the name of the food item to remove from the menu: ",
+            (itemName) => {
+              socket.emit("deleteFoodItem", itemName);
+              socket.off("deleteFoodItemResponse");
+              socket.on("deleteFoodItemResponse", (response) => {
+                if (response.success) {
+                  console.log(response.message);
+                } else {
+                  console.error(response.message);
+                }
+              });
+            }
+          );
+        } else if (answer === "2") {
+          rl.question(
+            "Enter the name of the food item to get detailed feedback: ",
+            (itemName) => {
+              const questions = [
+                `What didn’t you like about ${itemName}?`,
+                `How would you like ${itemName} to taste?`,
+                `Share your mom’s recipe for ${itemName}.`,
+              ];
+
+              socket.emit('storeFeedbackQuestions', itemName, questions);
+
+              socket.on('storeFeedbackQuestionsResponse', (response) => {
+                if (response.success) {
+                  console.log(`Questions stored successfully for ${itemName}.`);
+                } else {
+                  console.error(`Failed to store questions: ${response.message}`);
+                }
+              });
+
+              const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
+              Press 3 --> Give Detailed Feedback`;
+              socket.emit("sendNotificationToEmployees", message, false);
+              socket.off("employeeNotificationResponse");
+              socket.on("employeeNotificationResponse", (response) => {
+                if (response.success) {
+                  console.log(
+                    `Notification sent to employees to provide feedback on ${itemName}.`
+                  );
+                  requestMenu(role);
+                } else {
+                  console.error(
+                    `Failed to send notification: ${response.message}`
+                  );
+                }
+              });
+            }
+          );
+        } else if (answer === "exit") {
+          requestMenu(role);
+        } else {
+          console.log("Invalid choice. Please enter 1 or 2.");
+        }
+      }
+    );
+  });
 };

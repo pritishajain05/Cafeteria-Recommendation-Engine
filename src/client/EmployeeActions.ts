@@ -3,11 +3,14 @@ import { employeeId, socket } from "./client";
 import { IFinalMenu, IRolledOutmenu } from "./../interface/IFoodItem";
 import { requestMenu, rl } from "./clientOperation";
 import { INotification } from "../interface/INotification";
+import { DietaryPreference } from "../enum/UserPreferences";
+import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion } from "../interface/IFeedback";
+
 
 const promptUserForIds = (mealType: string) => {
   return new Promise<number[]>((resolve) => {
     rl.question(
-      `Vote for any 2 ${mealType} items (comma-separated): `,
+      `Vote for any 2 ${mealType} items (comma-separated foodItemid): `,
       (answer) => {
         const selectedItemIds = (answer as string)
           .split(",")
@@ -167,7 +170,7 @@ export const viewNotification = async (role: Role) => {
       });
 
       rl.question(
-        "Enter your choice: \n Type exit to return to main menu",
+        "Enter your choice: \nType exit to return to main menu",
         (choice) => {
           switch (choice) {
             case "1":
@@ -175,6 +178,9 @@ export const viewNotification = async (role: Role) => {
               break;
             case "2":
               viewFinalMenu(role);
+              break;
+            case "3":
+              giveDetailedFeedback(role);
               break;
             case "exit":
               requestMenu(role);
@@ -192,7 +198,7 @@ export const viewNotification = async (role: Role) => {
   });
 };
 
-const viewFinalMenu = async (role: Role) => {
+export const viewFinalMenu = async (role: Role) => {
   socket.emit("getFinalizedMenu");
 
   socket.off("finalizedMenuResponse");
@@ -204,13 +210,13 @@ const viewFinalMenu = async (role: Role) => {
 
     if (data.finalMenu && data.finalMenu.length > 0) {
       console.log("Finalized Menu for Tomorrow:");
-      const breakfastItems = data.filter(
+      const breakfastItems = data.finalMenu.filter(
         (item: IFinalMenu) => item.mealType === "Breakfast"
       );
-      const lunchItems = data.filter(
+      const lunchItems = data.finalMenu.filter(
         (item: IFinalMenu) => item.mealType === "Lunch"
       );
-      const dinnerItems = data.filter(
+      const dinnerItems = data.finalMenu.filter(
         (item: IFinalMenu) => item.mealType === "Dinner"
       );
 
@@ -229,4 +235,120 @@ const viewFinalMenu = async (role: Role) => {
       viewNotification(role);
     }
   });
+};
+
+export const giveDetailedFeedback = async (role: Role) => {
+  socket.emit("getFeedbackQuestions");
+
+  socket.once("feedbackQuestionsResponse", async (data) => {
+    if (data.error) {
+      console.error("Error fetching feedback questions:", data.error);
+      return;
+    }
+
+    const allQuestions: IDetailedFeedbackQuestion[] = data.questions;
+
+    socket.emit("getEmployeeFeedbackAnswers", { employeeId: employeeId });
+
+    socket.once("employeeFeedbackAnswersResponse", async (answerData) => {
+      if (answerData.error) {
+        console.error("Error fetching employee feedback answers:", answerData.error);
+        return;
+      }
+
+      const answeredQuestionIds: number[] = answerData.answers.map(
+        (answer: IDetailedFeedbackAnswer) => answer.questionId
+      );
+
+      const unansweredQuestions: IDetailedFeedbackQuestion[] = allQuestions.filter(
+        (question) => !answeredQuestionIds.includes(question.id)
+      );
+
+      const answers: IDetailedFeedbackAnswer[] = [];
+
+      const askQuestion = async (index: number): Promise<void> => {
+        if (index >= unansweredQuestions.length) {
+          socket.emit("storeFeedbackAnswers", answers);
+          socket.once("storeFeedbackAnswersResponse", (response) => {
+            if (response.success) {
+              console.log("Feedback answers stored successfully.");
+              requestMenu(role);
+            } else {
+              console.error("Error storing feedback answers:", response.message);
+            }
+          });
+          return;
+        }
+
+        const question = unansweredQuestions[index];
+        rl.question(`${question.question} `, (answer) => {
+          answers.push({
+            questionId: question.id,
+            employeeId: employeeId,
+            answer: answer,
+          });
+          askQuestion(index + 1);
+        });
+      };
+
+      await askQuestion(0);
+    });
+  });
+};
+
+export const updateProfile = async (role: Role) => {
+  console.log("Please answer these questions to know your preferences");
+
+  rl.question(
+    `1) Please select one - ${Object.values(DietaryPreference).join(" / ")}: `,
+    (preferenceType) => {
+      if (!Object.values(DietaryPreference).includes(preferenceType as DietaryPreference)) {
+        console.error("Invalid choice. Please select a valid option.");
+        updateProfile(role);
+        return;
+      }
+
+      rl.question("2) Please select your spice level - High / Medium / Low: ", (spiceLevel) => {
+        if (!["High", "Medium", "Low"].includes(spiceLevel)) {
+          console.error("Invalid choice. Please select a valid option.");
+          updateProfile(role);
+          return;
+        }
+
+        rl.question("3) What do you prefer most - North Indian / South Indian / Other: ", (cuisineType) => {
+          if (!["North Indian", "South Indian", "Other"].includes(cuisineType)) {
+            console.error("Invalid choice. Please select a valid option.");
+            updateProfile(role);
+            return;
+          }
+
+          rl.question("4) Do you have a sweet tooth? (Yes / No): ", (sweetTooth) => {
+            if (!["Yes", "No"].includes(sweetTooth)) {
+              console.error("Invalid choice. Please select a valid option.");
+              updateProfile(role);
+              return;
+            }
+
+            const preferences = {
+              preferenceType,
+              spiceLevel,
+              cuisineType,
+              sweetTooth: sweetTooth === "Yes",
+            };
+
+            socket.emit("updateUserPreferences", employeeId, preferences);
+            socket.off("updateUserPreferencesResponse");
+            socket.on("updateUserPreferencesResponse", (response) => {
+              if (response.success) {
+                console.log("Profile updated successfully!");
+              } else {
+                console.error("Failed to update profile:", response.message);
+              }
+              requestMenu(role);
+            });
+          });
+        });
+      });
+    }
+  );
 };
