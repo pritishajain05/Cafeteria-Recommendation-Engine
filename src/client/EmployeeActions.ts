@@ -6,6 +6,7 @@ import { INotification } from "../interface/INotification";
 import { CuisinePreference, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
 import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion } from "../interface/IFeedback";
 import { IFoodItemPreference, IUserPreference } from "../interface/IUserPreference";
+import { IFeedback } from './../interface/IFeedback';
 
 
 const promptUserForIds = (mealType: string) => {
@@ -57,8 +58,6 @@ const sortMenuItems = (menuItems: IRolledOutmenu[], foodPreferences: IFoodItemPr
     const prefA = foodPreferences.find((pref) => pref.foodItemId === a.foodItemId);
     const prefB = foodPreferences.find((pref) => pref.foodItemId === b.foodItemId);
 
-    console.log(a.foodItemId,"preferences",prefA)
-    console.log(b.foodItemId,"preferences",prefB)
     let scoreA = 0;
     let scoreB = 0;
 
@@ -75,8 +74,6 @@ const sortMenuItems = (menuItems: IRolledOutmenu[], foodPreferences: IFoodItemPr
       if (prefB.cuisineType.toLowerCase() === userPreferences.cuisineType.toLowerCase()) scoreB++;
       if (prefB.sweetTooth === userPreferences.sweetTooth) scoreB++;
     }
-
-    console.log(`Item ${a.id}: Score A = ${scoreA}, Score B = ${scoreB}`);
 
     return scoreB - scoreA;
   });
@@ -96,10 +93,9 @@ export const selectFoodItemsForNextDay = async (role: Role) => {
     }
 
     const rolledOutMenu: IRolledOutmenu[] = data.rolledOutMenu;
+  
     const userPreferences = await getUserPreferences(employeeId);
     const foodPreferences = await getFoodItemPreferences();
-console.table(userPreferences);
-console.table(foodPreferences);
 
     const sortedBreakfastItems = sortMenuItems(
       rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Breakfast"),
@@ -121,15 +117,24 @@ console.table(foodPreferences);
 
    
     console.log("Breakfast Items:");
-    console.table(sortedBreakfastItems);
+    console.table(sortedBreakfastItems.map(item => {
+      const { id,votes, ...rest } = item;
+      return rest;
+    }));
     const votesBreakfastIds = await promptUserForIds("Breakfast");
 
     console.log("Lunch Items:");
-    console.table(sortedLunchItems);
+    console.table(sortedLunchItems.map(item => {
+      const { id,votes, ...rest } = item;
+      return rest;
+    }));
     const votesLunchIds = await promptUserForIds("Lunch");
 
     console.log("Dinner Items:");
-    console.table(sortedDinnerItems);
+    console.table(sortedDinnerItems.map(item => {
+      const { id,votes, ...rest } = item;
+      return rest;
+    }));
     const votesDinnerIds = await promptUserForIds("Dinner");
 
     const votedIds = [
@@ -167,7 +172,10 @@ export const viewFeedbackOnItem = async (role: Role) => {
 
         if (data.feedback && data.feedback.length > 0) {
           console.log(`Feedback for Food Item ID ${id}:`);
-          console.table(data.feedback);
+          console.table(data.feedback.map((feedback:IFeedback) => {
+            const { employeeId, ...rest } = feedback;
+            return rest;
+          }));
         } else {
           console.log("No feedbacks found for this item");
         }

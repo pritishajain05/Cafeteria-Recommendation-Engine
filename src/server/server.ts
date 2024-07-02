@@ -171,7 +171,7 @@ io.on("connection", (socket) => {
 
   socket.on("getRolledOutMenu", async () => {
     try {
-      const rolledOutMenu = await foodItemService.getRolledOutItems();
+      const rolledOutMenu = await recommendationService.getRolledOutItemsWithFeedback();
       socket.emit("rolledOutMenuResponse", { rolledOutMenu });
     } catch (error) {
       console.log("Error in rolling out menu", error);

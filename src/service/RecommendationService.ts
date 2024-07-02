@@ -2,7 +2,7 @@ import { positiveWords, negativeWords, positiveSentences, negativeSentences } fr
 import { FoodItemRepository } from '../repository/FoodItemRepository';
 import { FeedbackRepository } from '../repository/FeedbackRepository';
 import { IFeedback } from '../interface/IFeedback';
-import { IDiscardFoodItem, IMenuItem } from '../interface/IFoodItem';
+import { IDiscardFoodItem, IMenuItem, IRolledOutmenu } from '../interface/IFoodItem';
 
 export class RecommendationService {
 
@@ -25,15 +25,39 @@ export class RecommendationService {
     }
   }
 
+  async getRolledOutItemsWithFeedback(): Promise<IRolledOutmenu[]> {
+    try {
+      const feedbackMap = this.calculateFeedbackMap();
+      const rolledOutMenu = await this.foodItemRepository.getRolledOutItems();
+
+      return rolledOutMenu.map(item => {
+        const feedback = feedbackMap.get(item.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
+        const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
+        const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
+        const summary = this.generateCommentSummary(feedback.comments);
+
+        return {
+          ...item,
+          averageRating: parseFloat(averageRating.toFixed(2)),
+          averageSentiment: parseFloat(averageSentiment.toFixed(2)),
+          summary: summary
+        };
+      });
+
+    } catch (error) {
+      console.error('Error fetching rolled out menu with feedback:', error);
+      throw error;
+    }
+  }
+
+
   async getTopItemsForMealType(mealType: string, topN: number): Promise<IMenuItem[]> {
     try {
-
       const feedbackMap = this.calculateFeedbackMap();
-    
       const filteredItems = this.foodItems.filter(item => item.mealType.includes(mealType) && item.availabilityStatus);
 
       const scoredItems = filteredItems.map(item => {
-        const feedback = feedbackMap.get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0 };
+        const feedback = feedbackMap.get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
         const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
         const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
 
@@ -41,7 +65,7 @@ export class RecommendationService {
 
         return {
           ...item,
-          rankingScore:parseFloat(rankingScore.toFixed(2)),
+          rankingScore: parseFloat(rankingScore.toFixed(2)),
         };
       });
 
@@ -53,21 +77,20 @@ export class RecommendationService {
     }
   }
 
-  
-  private calculateFeedbackMap() :Map<number, { totalRating: number; totalSentiment: number; count: number }> {
-    const feedbackMap: Map<number, { totalRating: number; totalSentiment: number; count: number }> = new Map();
+  private calculateFeedbackMap(): Map<number, { totalRating: number; totalSentiment: number; count: number; comments: string[] }> {
+    const feedbackMap: Map<number, { totalRating: number; totalSentiment: number; count: number; comments: string[] }> = new Map();
 
     this.feedbacks.forEach(feedback => {
       const sentimentScore = this.analyzeSentiment(feedback.comment);
-      const item = feedbackMap.get(feedback.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0 };
+      const item = feedbackMap.get(feedback.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
       item.totalRating += feedback.rating;
       item.totalSentiment += sentimentScore;
       item.count += 1;
+      item.comments.push(feedback.comment);
       feedbackMap.set(feedback.foodItemId, item);
     });
 
     return feedbackMap;
-
   }
 
   private analyzeSentiment(comment: string): number {
@@ -87,12 +110,12 @@ export class RecommendationService {
     });
 
     sentences.forEach(sentence => {
-        if (positiveSentences.some(positive => sentence.includes(positive))) {
-          sentimentScore += 5; 
-        } else if (negativeSentences.some(negative => sentence.includes(negative))) {
-          sentimentScore -= 5;
-        }
-      });
+      if (positiveSentences.some(positive => sentence.includes(positive))) {
+        sentimentScore += 5;
+      } else if (negativeSentences.some(negative => sentence.includes(negative))) {
+        sentimentScore -= 5;
+      }
+    });
 
     const normalizedSentimentScore = wordCount ? sentimentScore / wordCount : 0;
     return normalizedSentimentScore;
@@ -101,10 +124,27 @@ export class RecommendationService {
   private calculateScore(averageRating: number, averageSentiment: number): number {
     const weightAverageRating = 0.5;
     const weightSentiment = 0.5;
-
     return (weightAverageRating * averageRating) + (weightSentiment * averageSentiment);
   }
 
+  private generateCommentSummary(comments: string[]): string {
+    if (comments.length === 0) {
+      return 'No comments on this item';
+    }
+  
+    const positiveComments = comments.filter(comment => this.analyzeSentiment(comment) > 0);
+    const negativeComments = comments.filter(comment => this.analyzeSentiment(comment) < 0);
+  
+    const positiveSummary = positiveComments.length ? positiveComments.slice(0, 3).join(', ') : '';
+    const negativeSummary = negativeComments.length ? negativeComments.slice(0, 3).join(', ') : '';
+ 
+    if (!positiveSummary && !negativeSummary) {
+      return comments.slice(0, 3).join(', ');
+    }
+  
+    return `${positiveSummary}${positiveSummary && negativeSummary ? ', ' : ''}${negativeSummary}`;
+  }
+  
 
   async recommendationEngine(): Promise<{ topBreakfastItems: IMenuItem[], topLunchItems: IMenuItem[], topDinnerItems: IMenuItem[] }> {
     try {
@@ -113,40 +153,36 @@ export class RecommendationService {
       const topDinnerItems = await this.getTopItemsForMealType("Dinner", 2);
 
       return {topBreakfastItems , topLunchItems , topDinnerItems}
-
     } catch (error) {
       console.error("Error generating recommendations:", error);
       throw error;
     } 
   }
-  
-    async getDiscardFoodItems(): Promise<void> {
-      try {
-        const discardFoodItems: IDiscardFoodItem[] = [];
 
-        this.foodItems.forEach(item => {
-          const feedback = this.calculateFeedbackMap().get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0 };
-          const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
-          const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
-  
-          if (averageRating < 2 && averageSentiment < 0) {
-            discardFoodItems.push({
-              foodItemId: item.id,
-              foodItemName: item.name,
-              averageRating : parseFloat(averageRating.toFixed(2)),
-              averageSentiment : parseFloat(averageSentiment.toFixed(2))
-            });
-          }
-        });
+  async getDiscardFoodItems(): Promise<void> {
+    try {
+      const discardFoodItems: IDiscardFoodItem[] = [];
 
-        console.table(discardFoodItems);
-        await this.foodItemRepository.addDiscardFoodItems(discardFoodItems);
+      this.foodItems.forEach(item => {
+        const feedback = this.calculateFeedbackMap().get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
+        const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
+        const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
 
-      } catch (error) {
-        console.error("Error fetching discard food items:", error);
-        throw error;
-      }
+        if (averageRating < 2 && averageSentiment < 0) {
+          discardFoodItems.push({
+            foodItemId: item.id,
+            foodItemName: item.name,
+            averageRating: parseFloat(averageRating.toFixed(2)),
+            averageSentiment: parseFloat(averageSentiment.toFixed(2)),
+          });
+        }
+      });
+
+      console.table(discardFoodItems);
+      await this.foodItemRepository.addDiscardFoodItems(discardFoodItems);
+    } catch (error) {
+      console.error("Error fetching discard food items:", error);
+      throw error;
+    }
   }
 }
-
-
