@@ -1,9 +1,8 @@
-import { updateFoodItem } from "../client/AdminActions";
-import { MealType } from "../enum/MealType";
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { IDiscardFoodItem, IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IFoodItemPreference } from "../interface/IUserPreference";
 import { FoodItemRepository } from "../repository/FoodItemRepository";
-import { ADD_ROLLED_OUT_ITEMS } from './../utils/constant';
+
 
 export class FoodItemService {
   private foodItemRepository = new FoodItemRepository();
@@ -79,7 +78,9 @@ async getFinalFoodItem():Promise<IFinalMenu[]>{
   return await this.foodItemRepository.getFinalFoodItem();
 }
 
+async getAllFoodItemPreferences() : Promise<IFoodItemPreference[]>{
+  return await this.foodItemRepository.getAllFoodItemPreferences();
 }
 
 
-
+}

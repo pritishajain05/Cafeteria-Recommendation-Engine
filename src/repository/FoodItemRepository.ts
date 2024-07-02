@@ -17,6 +17,7 @@ import {
   GET_FINAL_FOOD_ITEM,
   GET_ROLLED_OUT_ITEMS,
   IS_ITEM_IN_FINAL_MENU,
+  SELECT_ALL_FOOD_ITEM_PREFERENCES,
   UPDATE_FOOD_ITEM,
 } from "../utils/constant";
 import {
@@ -27,6 +28,7 @@ import {
   IRolledOutmenu,
 } from "../interface/IFoodItem";
 import { IFeedback } from "../interface/IFeedback";
+import { IFoodItemPreference } from "../interface/IUserPreference";
 
 export class FoodItemRepository {
   private currentDate: string;
@@ -298,4 +300,14 @@ export class FoodItemRepository {
       throw error;
     }
   }
+
+  async getAllFoodItemPreferences() : Promise<IFoodItemPreference[]>{
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(SELECT_ALL_FOOD_ITEM_PREFERENCES);
+      return rows as IFoodItemPreference[];
+    } catch (error) {
+      console.error('Error fetching all food item preferences:', error);
+      throw error; 
+    }
+}
 }

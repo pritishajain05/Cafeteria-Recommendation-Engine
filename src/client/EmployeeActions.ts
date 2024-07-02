@@ -3,8 +3,9 @@ import { employeeId, socket } from "./client";
 import { IFinalMenu, IRolledOutmenu } from "./../interface/IFoodItem";
 import { requestMenu, rl } from "./clientOperation";
 import { INotification } from "../interface/INotification";
-import { DietaryPreference } from "../enum/UserPreferences";
+import { CuisinePreference, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
 import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion } from "../interface/IFeedback";
+import { IFoodItemPreference, IUserPreference } from "../interface/IUserPreference";
 
 
 const promptUserForIds = (mealType: string) => {
@@ -23,6 +24,67 @@ const promptUserForIds = (mealType: string) => {
   });
 };
 
+
+const getUserPreferences = async (employeeId: number) : Promise<IUserPreference> => {
+  return new Promise((resolve, reject) => {
+    socket.emit("getUserPreferences", employeeId);
+    socket.once("userPreferencesResponse", (data) => {
+      if (data.error) {
+        reject(data.error);
+      } else {
+        resolve(data.preferences);
+      }
+    });
+  });
+};
+
+const getFoodItemPreferences = async () :Promise<IFoodItemPreference[]>=> {
+  return new Promise((resolve, reject) => {
+    socket.emit("getFoodItemPreferences");
+    socket.once("foodItemPreferencesResponse", (data) => {
+      if (data.error) {
+        reject(data.error);
+      } else {
+        resolve(data.preferences);
+      }
+    });
+  });
+};
+
+
+const sortMenuItems = (menuItems: IRolledOutmenu[], foodPreferences: IFoodItemPreference[], userPreferences: IUserPreference) => {
+  const sortedItems = menuItems.sort((a, b) => {
+    const prefA = foodPreferences.find((pref) => pref.foodItemId === a.foodItemId);
+    const prefB = foodPreferences.find((pref) => pref.foodItemId === b.foodItemId);
+
+    console.log(a.foodItemId,"preferences",prefA)
+    console.log(b.foodItemId,"preferences",prefB)
+    let scoreA = 0;
+    let scoreB = 0;
+
+    if (prefA) {
+      if (prefA.dietaryPreference.toLowerCase() === userPreferences.dietaryPreference.toLowerCase()) scoreA++;
+      if (prefA.spiceLevel.toLowerCase() === userPreferences.spiceLevel.toLowerCase()) scoreA++;
+      if (prefA.cuisineType.toLowerCase() === userPreferences.cuisineType.toLowerCase()) scoreA++;
+      if (prefA.sweetTooth === userPreferences.sweetTooth) scoreA++;
+    }
+
+    if (prefB) {
+      if (prefB.dietaryPreference.toLowerCase() === userPreferences.dietaryPreference.toLowerCase()) scoreB++;
+      if (prefB.spiceLevel.toLowerCase() === userPreferences.spiceLevel.toLowerCase()) scoreB++;
+      if (prefB.cuisineType.toLowerCase() === userPreferences.cuisineType.toLowerCase()) scoreB++;
+      if (prefB.sweetTooth === userPreferences.sweetTooth) scoreB++;
+    }
+
+    console.log(`Item ${a.id}: Score A = ${scoreA}, Score B = ${scoreB}`);
+
+    return scoreB - scoreA;
+  });
+
+  return sortedItems;
+};
+
+
 export const selectFoodItemsForNextDay = async (role: Role) => {
   socket.emit("getRolledOutMenu");
 
@@ -34,27 +96,40 @@ export const selectFoodItemsForNextDay = async (role: Role) => {
     }
 
     const rolledOutMenu: IRolledOutmenu[] = data.rolledOutMenu;
+    const userPreferences = await getUserPreferences(employeeId);
+    const foodPreferences = await getFoodItemPreferences();
+console.table(userPreferences);
+console.table(foodPreferences);
 
-    const breakfastItems = rolledOutMenu.filter(
-      (item: IRolledOutmenu) => item.mealType === "Breakfast"
-    );
-    const lunchItems = rolledOutMenu.filter(
-      (item: IRolledOutmenu) => item.mealType === "Lunch"
-    );
-    const dinnerItems = rolledOutMenu.filter(
-      (item: IRolledOutmenu) => item.mealType === "Dinner"
+    const sortedBreakfastItems = sortMenuItems(
+      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Breakfast"),
+      foodPreferences,
+      userPreferences
     );
 
+    const sortedLunchItems = sortMenuItems(
+      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Lunch"),
+      foodPreferences,
+      userPreferences
+    );
+
+    const sortedDinnerItems = sortMenuItems(
+      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Dinner"),
+      foodPreferences,
+      userPreferences
+    );
+
+   
     console.log("Breakfast Items:");
-    console.table(breakfastItems);
+    console.table(sortedBreakfastItems);
     const votesBreakfastIds = await promptUserForIds("Breakfast");
 
     console.log("Lunch Items:");
-    console.table(lunchItems);
+    console.table(sortedLunchItems);
     const votesLunchIds = await promptUserForIds("Lunch");
 
     console.log("Dinner Items:");
-    console.table(dinnerItems);
+    console.table(sortedDinnerItems);
     const votesDinnerIds = await promptUserForIds("Dinner");
 
     const votedIds = [
@@ -296,44 +371,49 @@ export const giveDetailedFeedback = async (role: Role) => {
   });
 };
 
+
 export const updateProfile = async (role: Role) => {
   console.log("Please answer these questions to know your preferences");
 
   rl.question(
     `1) Please select one - ${Object.values(DietaryPreference).join(" / ")}: `,
-    (preferenceType) => {
-      if (!Object.values(DietaryPreference).includes(preferenceType as DietaryPreference)) {
+    (preferenceTypeInput) => {
+      const preferenceType = preferenceTypeInput.trim().toUpperCase() as DietaryPreference;
+      if (!Object.values(DietaryPreference).map(p => p.toUpperCase()).includes(preferenceType)) {
         console.error("Invalid choice. Please select a valid option.");
         updateProfile(role);
         return;
       }
 
-      rl.question("2) Please select your spice level - High / Medium / Low: ", (spiceLevel) => {
-        if (!["High", "Medium", "Low"].includes(spiceLevel)) {
+      rl.question("2) Please select your spice level - High / Medium / Low: ", (spiceLevelInput) => {
+        const spiceLevel = spiceLevelInput.trim().toLowerCase() as SpiceLevel;
+        if (!Object.values(SpiceLevel).map(s => s.toLowerCase()).includes(spiceLevel)) {
           console.error("Invalid choice. Please select a valid option.");
           updateProfile(role);
           return;
         }
 
-        rl.question("3) What do you prefer most - North Indian / South Indian / Other: ", (cuisineType) => {
-          if (!["North Indian", "South Indian", "Other"].includes(cuisineType)) {
+        rl.question("3) What do you prefer most - North Indian / South Indian / Other: ", (cuisineTypeInput) => {
+          const cuisineType = cuisineTypeInput.trim().toLowerCase() as CuisinePreference;
+          if (!Object.values(CuisinePreference).map(c => c.toLowerCase()).includes(cuisineType)) {
             console.error("Invalid choice. Please select a valid option.");
             updateProfile(role);
             return;
           }
 
-          rl.question("4) Do you have a sweet tooth? (Yes / No): ", (sweetTooth) => {
-            if (!["Yes", "No"].includes(sweetTooth)) {
+          rl.question("4) Do you have a sweet tooth? (Yes / No): ", (sweetToothInput) => {
+            const sweetTooth = sweetToothInput.trim().toLowerCase();
+            if (!["yes", "no"].includes(sweetTooth)) {
               console.error("Invalid choice. Please select a valid option.");
               updateProfile(role);
               return;
             }
 
             const preferences = {
-              preferenceType,
+              dietaryPreference:preferenceType,
               spiceLevel,
-              cuisineType,
-              sweetTooth: sweetTooth === "Yes",
+              cuisineType:cuisineType,
+              sweetTooth: sweetTooth === "yes",
             };
 
             socket.emit("updateUserPreferences", employeeId, preferences);

@@ -20,12 +20,12 @@ export const CHECK_FOOD_ITEM_EXISTENCE: string = `SELECT * FROM foodItem WHERE L
 export const UPDATE_FOOD_ITEM: string =
   "UPDATE foodItem SET name = ?, price = ?, availabilityStatus = ?,foodCategoryId = ? ,mealTypeid = ? WHERE name = ?";
 
-export const UPDATE_USER_PREFERENCES: string = ` INSERT INTO user_preferences (employeeId, dietaryPreference, spiceLevel, cuisinePreference, sweetTooth)
+export const UPDATE_USER_PREFERENCES: string = ` INSERT INTO userProfile (employeeId, dietaryPreference, spiceLevel, cuisineType, sweetTooth)
   VALUES (?, ?, ?, ?, ?)
   ON DUPLICATE KEY UPDATE
     dietaryPreference = VALUES(dietaryPreference),
     spiceLevel = VALUES(spiceLevel),
-    cuisinePreference = VALUES(cuisinePreference),
+    cuisineType = VALUES(cuisineType),
     sweetTooth = VALUES(sweetTooth)`;
 
 export const GET_ALL_FOOD_ITEMS: string = `
@@ -117,6 +117,16 @@ export const GET_ALL_DETAILED_FEEDBACK_QUESTIONS: string= "SELECT * FROM detaile
 export const GET_EMPLOYEE_FEEDBACK_ANSWERS: string = "SELECT * FROM detailedFeedbackAnswer WHERE employeeId = ?";
 
 export const STORE_FEEDBACK_ANSWERS: string = "INSERT INTO detailedFeedbackAnswer (questionId, employeeId, answer, date) VALUES ?";
+
+export const SELECT_USER_PREFERENCES = `
+  SELECT dietaryPreference, spiceLevel, cuisineType, sweetTooth 
+  FROM userProfile 
+  WHERE employeeId = ?
+`;
+
+export const SELECT_ALL_FOOD_ITEM_PREFERENCES = `
+  SELECT * FROM FoodItemPreferences
+`;
 
 export const positiveWords: string[] = [
   "good",

@@ -11,7 +11,7 @@ import { FeedbackService } from "../service/FeedbackService";
 import { IFeedback } from "../interface/IFeedback";
 import { NotificationService } from "../service/NotificationService";
 import { UserService } from "../service/UserService";
-import { IUserPreferences } from "../interface/IUserPreferences";
+import { IUserPreference } from "../interface/IUserPreference";
 
 const server = http.createServer();
 const io = new Server(server);
@@ -319,7 +319,7 @@ io.on("connection", (socket) => {
 
   socket.on(
     "updateUserPreferences",
-    async (employeeId: number, preferences: IUserPreferences) => {
+    async (employeeId: number, preferences: IUserPreference) => {
       try {
         const response = await userService.updateUserPreferences(
           employeeId,
@@ -377,6 +377,24 @@ socket.on('storeFeedbackAnswers', async (answers) => {
   } catch (error) {
     console.error('Error storing feedback answers:', error);
     socket.emit('storeFeedbackAnswersResponse', { success: false, message: error});
+  }
+});
+
+socket.on("getUserPreferences", async (employeeId) => {
+  try {
+    const preferences = await userService.getUserPreferences(employeeId);
+    socket.emit("userPreferencesResponse", { preferences });
+  } catch (error) {
+    socket.emit("userPreferencesResponse", { error: "Failed to fetch user preferences" });
+  }
+});
+
+socket.on("getFoodItemPreferences", async () => {
+  try {
+    const preferences = await foodItemService.getAllFoodItemPreferences();
+    socket.emit("foodItemPreferencesResponse", { preferences });
+  } catch (error) {
+    socket.emit("foodItemPreferencesResponse", { error: "Failed to fetch food item preferences" });
   }
 });
 
