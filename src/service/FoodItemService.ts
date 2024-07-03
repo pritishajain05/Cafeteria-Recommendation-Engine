@@ -1,8 +1,14 @@
 import { IFoodCategory } from "../interface/IFoodCategory";
-import { IFinalMenu, IFoodItem, IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
-import { IFoodItemPreference } from "../interface/IUserPreference";
+import {
+  IFinalMenu,
+  IFoodItem,
+  IMenuItem,
+  IRolledOutmenu,
+} from "../interface/IFoodItem";
+import {
+  IFoodItemPreference
+} from "../interface/IUserPreference";
 import { FoodItemRepository } from "../repository/FoodItemRepository";
-
 
 export class FoodItemService {
   private foodItemRepository = new FoodItemRepository();
@@ -11,76 +17,90 @@ export class FoodItemService {
     return await this.foodItemRepository.getAllCategories();
   }
 
-  async addFoodItem(item: IFoodItem): Promise<{ message: string , success:boolean}> {
-    const exists = await this.foodItemRepository.checkFoodItemExistence(item.name);
-      if(exists) {
-        return { message:"Food Item already Exists! Try to Add another Food Item" , success: false ,}
-      }
-    try {
-        const result = await this.foodItemRepository.addFoodItem(item);
-        return { success: result.success, message: result.message };
-      } catch (error) {
-        return { message: "Error in adding food item" , success: false};
-      }
-  }
+  async addFoodItem(
+    item: IFoodItem,
+    foodItemPreference: IFoodItemPreference
+  ): Promise<{ message: string; success: boolean }> {
+    const exists = await this.foodItemRepository.checkFoodItemExistence(
+      item.name
+    );
+    if (exists) {
+      return {
+        message: "Food Item already Exists! Try to Add another Food Item",
+        success: false,
+      };
+    }
+    const foodItemId = await this.foodItemRepository.addFoodItem(item);
+    foodItemPreference.foodItemId = foodItemId;
+    const result = await this.foodItemRepository.addFoodItemPreference(
+      foodItemPreference
+    );
 
-  async deleteFoodItem(itemName: string): Promise<{message: string, success: boolean}> {
-    const exists = await this.foodItemRepository.checkFoodItemExistence(itemName);
-      if (!exists) {
-        return { success: false, message: "Food item not found." };
-      }
-
-      try {
-        const result = await this.foodItemRepository.deleteFoodItem(itemName);
-        return { success: result.success, message: result.message };
-        
-      } catch (error) {
-        return { success: false, message: `Failed to delete food item: ${error}` };
-      }
-    
-}
-
-async updateFoodItem(oldItemName: string, updatedFoodItem: IFoodItem): Promise<{ message: string, success: boolean }> {
-  try {
-    const result = await this.foodItemRepository.updateFoodItem(oldItemName, updatedFoodItem);
     return { success: result.success, message: result.message };
-  } catch (error) {
-    console.error("Error updating food item:", error);
-    return { success: false, message: `Failed to update food item: ${error}` };
-  }
-}
-
-async viewAllFoodItems(): Promise<IMenuItem[]| null>{
-  return await this.foodItemRepository.getAllFoodItems();
-}
-
-async checkRolledOutMenu(): Promise<boolean> {
-  return await this.foodItemRepository.checkRolledOutMenu();
-}
-
-async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
-return await this.foodItemRepository.addRolledOutItems(selectedIds);
-}
-
-async getRolledOutItems(): Promise<IRolledOutmenu[]>  {
-  return await this.foodItemRepository.getRolledOutItems();
   }
 
-async voteForRolledOutItems(votedIds: number[]) : Promise<{ message: string }>{
-  return await this.foodItemRepository.addVoteForRolledOutItems(votedIds);
-}
+  async deleteFoodItem(
+    itemName: string
+  ): Promise<{ message: string; success: boolean }> {
+    const exists = await this.foodItemRepository.checkFoodItemExistence(
+      itemName
+    );
+    if (!exists) {
+      return { success: false, message: "Food item not found." };
+    }
+    const result = await this.foodItemRepository.deleteFoodItem(itemName);
+    return { success: result.success, message: result.message };
+  }
 
-async addFinalFoodItem(items:IRolledOutmenu[]) :Promise<{ message: string, success: boolean }> {
-  return  await this.foodItemRepository.addFinalFoodItem(items);
-}
+  async updateFoodItem(
+    oldItemName: string,
+    newFoodItem: IFoodItem,
+    newFoodItemPreference: IFoodItemPreference
+  ): Promise<{ message: string; success: boolean }> {
+    const foodItemId = await this.foodItemRepository.updateFoodItem(
+      oldItemName,
+      newFoodItem
+    );
+    const result = await this.foodItemRepository.updateFoodItemPreference(
+      foodItemId,
+      newFoodItemPreference
+    );
+    return { success: result.success, message: result.message };
+  }
 
-async getFinalFoodItem():Promise<IFinalMenu[]>{
-  return await this.foodItemRepository.getFinalFoodItem();
-}
+  async viewAllFoodItems(): Promise<IMenuItem[] | null> {
+    return await this.foodItemRepository.getAllFoodItems();
+  }
 
-async getAllFoodItemPreferences() : Promise<IFoodItemPreference[]>{
-  return await this.foodItemRepository.getAllFoodItemPreferences();
-}
+  async checkRolledOutMenu(): Promise<boolean> {
+    return await this.foodItemRepository.checkRolledOutMenu();
+  }
 
+  async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
+    return await this.foodItemRepository.addRolledOutItems(selectedIds);
+  }
 
+  async getRolledOutItems(): Promise<IRolledOutmenu[]> {
+    return await this.foodItemRepository.getRolledOutItems();
+  }
+
+  async voteForRolledOutItems(
+    votedIds: number[]
+  ): Promise<{ message: string }> {
+    return await this.foodItemRepository.addVoteForRolledOutItems(votedIds);
+  }
+
+  async addFinalFoodItem(
+    items: IRolledOutmenu[]
+  ): Promise<{ message: string; success: boolean }> {
+    return await this.foodItemRepository.addFinalFoodItem(items);
+  }
+
+  async getFinalFoodItem(): Promise<IFinalMenu[]> {
+    return await this.foodItemRepository.getFinalFoodItem();
+  }
+
+  async getAllFoodItemPreferences(): Promise<IFoodItemPreference[]> {
+    return await this.foodItemRepository.getAllFoodItemPreferences();
+  }
 }

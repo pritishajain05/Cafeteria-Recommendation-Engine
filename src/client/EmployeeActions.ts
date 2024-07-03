@@ -3,7 +3,7 @@ import { employeeId, socket } from "./client";
 import { IFinalMenu, IRolledOutmenu } from "./../interface/IFoodItem";
 import { requestMenu, rl } from "./clientOperation";
 import { INotification } from "../interface/INotification";
-import { CuisinePreference, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
+import { CuisineType, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
 import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion } from "../interface/IFeedback";
 import { IFoodItemPreference, IUserPreference } from "../interface/IUserPreference";
 import { IFeedback } from './../interface/IFeedback';
@@ -386,8 +386,8 @@ export const updateProfile = async (role: Role) => {
   rl.question(
     `1) Please select one - ${Object.values(DietaryPreference).join(" / ")}: `,
     (preferenceTypeInput) => {
-      const preferenceType = preferenceTypeInput.trim().toUpperCase() as DietaryPreference;
-      if (!Object.values(DietaryPreference).map(p => p.toUpperCase()).includes(preferenceType)) {
+      const preferenceType = preferenceTypeInput.trim().toLowerCase() as DietaryPreference;
+      if (!Object.values(DietaryPreference).map(p => p.toLowerCase()).includes(preferenceType)) {
         console.error("Invalid choice. Please select a valid option.");
         updateProfile(role);
         return;
@@ -402,8 +402,8 @@ export const updateProfile = async (role: Role) => {
         }
 
         rl.question("3) What do you prefer most - North Indian / South Indian / Other: ", (cuisineTypeInput) => {
-          const cuisineType = cuisineTypeInput.trim().toLowerCase() as CuisinePreference;
-          if (!Object.values(CuisinePreference).map(c => c.toLowerCase()).includes(cuisineType)) {
+          const cuisineType = cuisineTypeInput.trim().toLowerCase() as CuisineType;
+          if (!Object.values(CuisineType).map(c => c.toLowerCase()).includes(cuisineType)) {
             console.error("Invalid choice. Please select a valid option.");
             updateProfile(role);
             return;

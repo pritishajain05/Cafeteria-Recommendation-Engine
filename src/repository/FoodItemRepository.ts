@@ -5,6 +5,7 @@ import {
   ADD_DISCARD_FOOD_ITEM,
   ADD_FINAL_FOOD_ITEM,
   ADD_FOOD_ITEM,
+  ADD_FOOD_ITEM_PREFERENCE,
   ADD_ROLLED_OUT_ITEMS,
   ADD_VOTE_FOR_ROLLED_OUT_ITEMS,
   CHECK_FOOD_ITEM_EXISTENCE,
@@ -17,8 +18,10 @@ import {
   GET_FINAL_FOOD_ITEM,
   GET_ROLLED_OUT_ITEMS,
   IS_ITEM_IN_FINAL_MENU,
+  LAST_INSERTED_ID,
   SELECT_ALL_FOOD_ITEM_PREFERENCES,
   UPDATE_FOOD_ITEM,
+  UPDATE_FOOD_ITEM_PREFERENCE,
 } from "../utils/constant";
 import {
   IDiscardFoodItem,
@@ -71,9 +74,7 @@ export class FoodItemRepository {
     }
   }
 
-  async addFoodItem(
-    item: IFoodItem
-  ): Promise<{ message: string; success: boolean }> {
+  async addFoodItem(item: IFoodItem): Promise<number> {
     try {
       await pool.execute<RowDataPacket[]>(ADD_FOOD_ITEM, [
         item.name,
@@ -82,12 +83,29 @@ export class FoodItemRepository {
         item.foodCategoryId,
         item.mealTypeId,
       ]);
-      return { message: "Item added successfully.", success: true };
+      const [rows] = await pool.execute<RowDataPacket[]>(LAST_INSERTED_ID);
+      return rows[0].id;
     } catch (error) {
       console.error("Error in adding food item:", error);
       throw error;
     }
   }
+
+  async addFoodItemPreference (foodItemPreference: IFoodItemPreference): Promise<{ message: string; success: boolean }> {
+    try {
+      await pool.execute(ADD_FOOD_ITEM_PREFERENCE, [
+        foodItemPreference.foodItemId,
+        foodItemPreference.dietaryPreference,
+        foodItemPreference.spiceLevel,
+        foodItemPreference.cuisineType,
+        foodItemPreference.sweetTooth 
+      ]);
+      return { message: "Item and preferences added successfully.", success: true };
+    } catch (error) {
+      console.error("Error in adding food item preference:", error);
+      throw error;
+    }
+  };
 
   async deleteFoodItem(
     itemName: string
@@ -103,20 +121,41 @@ export class FoodItemRepository {
 
   async updateFoodItem(
     oldItemName: string,
-    updatedFoodItem: IFoodItem
-  ): Promise<{ message: string; success: boolean }> {
+    newFoodItem: IFoodItem
+  ): Promise<number> {
     try {
       await pool.execute(UPDATE_FOOD_ITEM, [
-        updatedFoodItem.name,
-        updatedFoodItem.price,
-        updatedFoodItem.availabilityStatus,
-        updatedFoodItem.foodCategoryId,
-        updatedFoodItem.mealTypeId,
+        newFoodItem.name,
+        newFoodItem.price,
+        newFoodItem.availabilityStatus,
+        newFoodItem.foodCategoryId,
+        newFoodItem.mealTypeId,
         oldItemName,
       ]);
-      return { message: "Item updated successfully.", success: true };
+
+      const [rows] = await pool.execute<RowDataPacket[]>("SELECT id FROM foodItem WHERE name = ?",[newFoodItem.name]);
+      return rows[0].id;
     } catch (error) {
       console.error("Error in updating food item:", error);
+      throw error;
+    }
+  }
+
+  async updateFoodItemPreference(
+    foodItemId: number,
+    newFoodItemPreference: IFoodItemPreference
+  ): Promise<{ message: string; success: boolean }> {
+    try {
+      await pool.execute(UPDATE_FOOD_ITEM_PREFERENCE, [
+        newFoodItemPreference.dietaryPreference,
+        newFoodItemPreference.spiceLevel,
+        newFoodItemPreference.cuisineType,
+        newFoodItemPreference.sweetTooth,
+        foodItemId,
+      ]);
+      return { message: "Item and preferences updated successfully.", success: true };
+    } catch (error) {
+      console.error("Error in updating food item preferences:", error);
       throw error;
     }
   }
@@ -191,7 +230,10 @@ export class FoodItemRepository {
     try {
       await Promise.all(
         votedIds.map(async (id) => {
-          await pool.execute(ADD_VOTE_FOR_ROLLED_OUT_ITEMS, [id]);
+          await pool.execute(ADD_VOTE_FOR_ROLLED_OUT_ITEMS, [
+            id,
+            this.currentDate,
+          ]);
         })
       );
       return { message: "Voted Successfully" };
@@ -254,16 +296,15 @@ export class FoodItemRepository {
 
   async getDiscardFoodItems(): Promise<IDiscardFoodItem[]> {
     try {
-         const [rows]= await pool.execute(GET_DISCARD_FOODITEM_BY_DATE,[this.currentDate]);
-         return rows as IDiscardFoodItem[]
-        }  
-     catch (error) {
+      const [rows] = await pool.execute(GET_DISCARD_FOODITEM_BY_DATE, [
+        this.currentDate,
+      ]);
+      return rows as IDiscardFoodItem[];
+    } catch (error) {
       console.error("Error adding discard food items:", error);
       throw error;
     }
   }
-
-
 
   async findRolloutFoodItemId(foodItemId: number): Promise<number | null> {
     try {
@@ -301,13 +342,15 @@ export class FoodItemRepository {
     }
   }
 
-  async getAllFoodItemPreferences() : Promise<IFoodItemPreference[]>{
+  async getAllFoodItemPreferences(): Promise<IFoodItemPreference[]> {
     try {
-      const [rows] = await pool.execute<RowDataPacket[]>(SELECT_ALL_FOOD_ITEM_PREFERENCES);
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        SELECT_ALL_FOOD_ITEM_PREFERENCES
+      );
       return rows as IFoodItemPreference[];
     } catch (error) {
-      console.error('Error fetching all food item preferences:', error);
-      throw error; 
+      console.error("Error fetching all food item preferences:", error);
+      throw error;
     }
-}
+  }
 }

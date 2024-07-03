@@ -11,7 +11,7 @@ import { FeedbackService } from "../service/FeedbackService";
 import { IFeedback } from "../interface/IFeedback";
 import { NotificationService } from "../service/NotificationService";
 import { UserService } from "../service/UserService";
-import { IUserPreference } from "../interface/IUserPreference";
+import { IFoodItemPreference, IUserPreference } from "../interface/IUserPreference";
 
 const server = http.createServer();
 const io = new Server(server);
@@ -60,11 +60,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("updateFoodItem", async ({ itemName, updatedFoodItem }) => {
+  socket.on("updateFoodItem", async (itemName:string, newFoodItem:IFoodItem , newFoodItemPreference:IFoodItemPreference) => {
     try {
       const result = await foodItemService.updateFoodItem(
         itemName,
-        updatedFoodItem
+        newFoodItem,
+        newFoodItemPreference
       );
       socket.emit("updateFoodItemResponse", {
         success: result.success,
@@ -91,9 +92,9 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("addFoodItem", async (foodItem: IFoodItem) => {
+  socket.on("addFoodItem", async (foodItem: IFoodItem , foodItemPreference: IFoodItemPreference) => {
     try {
-      const result = await adminController.addFoodItem(foodItem);
+      const result = await foodItemService.addFoodItem(foodItem , foodItemPreference);
       socket.emit("addFoodItemResponse", {
         success: result.success,
         message: result.message,

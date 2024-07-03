@@ -8,6 +8,8 @@ export const GET_ALL_FOOD_CATEGORIES: string = `Select * from foodCategory`;
 export const ADD_FOOD_ITEM = ` INSERT INTO foodItem (name, price, availabilityStatus, foodCategoryId, mealTypeId)
       VALUES (?, ?, ?, ?,?)`;
 
+export const ADD_FOOD_ITEM_PREFERENCE : string= `INSERT INTO FoodItemPreference (foodItemId, dietaryPreference, spiceLevel, cuisineType, sweetTooth) VALUES (?, ?, ?, ?, ?)`;
+
 export const ADD_FOOD_ITEM_MEAL_TYPE: string = `INSERT INTO foodItemMealType (foodItemId, mealTypeId)
       VALUES (?, ?)`;
 
@@ -19,6 +21,10 @@ export const CHECK_FOOD_ITEM_EXISTENCE: string = `SELECT * FROM foodItem WHERE L
 
 export const UPDATE_FOOD_ITEM: string =
   "UPDATE foodItem SET name = ?, price = ?, availabilityStatus = ?,foodCategoryId = ? ,mealTypeid = ? WHERE name = ?";
+
+ export const  UPDATE_FOOD_ITEM_PREFERENCE: string = `UPDATE FoodItemPreference
+  SET dietaryPreference = ?, spiceLevel = ?, cuisineType = ?, sweetTooth = ?
+  WHERE foodItemId = ?;`
 
 export const UPDATE_USER_PREFERENCES: string = ` INSERT INTO userProfile (employeeId, dietaryPreference, spiceLevel, cuisineType, sweetTooth)
   VALUES (?, ?, ?, ?, ?)
@@ -50,7 +56,7 @@ export const GET_ROLLED_OUT_ITEMS: string = `
 export const CHECK_ROLLED_OUT_MENU_EXISTENCE: string =
   "SELECT COUNT(*) as count FROM rolloutFoodItem WHERE rolloutDate=?";
 
-export const ADD_VOTE_FOR_ROLLED_OUT_ITEMS: string = `UPDATE rolloutFoodItem SET votes = votes + 1 WHERE foodItemId = ?`;
+export const ADD_VOTE_FOR_ROLLED_OUT_ITEMS: string = `UPDATE rolloutFoodItem SET votes = votes + 1 WHERE foodItemId = ? AND date= ?`;
 
 export const ADD_FINAL_FOOD_ITEM: string = `
           INSERT INTO finalFoodItem (rolloutFoodItemId, date)
@@ -106,17 +112,19 @@ export const IS_ITEM_IN_FINAL_MENU: string = `"SELECT * FROM finalFoodItem WHERE
 
 export const GET_DISCARD_FOODITEM_BY_DATE: string = `SELECT * FROM discardFoodItem WHERE date = ?`;
 
-
 export const ADD_DETAILED_FEEDBACK_QUESTION: string = `
   INSERT INTO detailedFeedbackQuestion (foodItemName, question, date )
   VALUES (?, ?, ?)
 `;
 
-export const GET_ALL_DETAILED_FEEDBACK_QUESTIONS: string= "SELECT * FROM detailedFeedbackQuestion";
+export const GET_ALL_DETAILED_FEEDBACK_QUESTIONS: string =
+  "SELECT * FROM detailedFeedbackQuestion";
 
-export const GET_EMPLOYEE_FEEDBACK_ANSWERS: string = "SELECT * FROM detailedFeedbackAnswer WHERE employeeId = ?";
+export const GET_EMPLOYEE_FEEDBACK_ANSWERS: string =
+  "SELECT * FROM detailedFeedbackAnswer WHERE employeeId = ?";
 
-export const STORE_FEEDBACK_ANSWERS: string = "INSERT INTO detailedFeedbackAnswer (questionId, employeeId, answer, date) VALUES ?";
+export const STORE_FEEDBACK_ANSWERS: string =
+  "INSERT INTO detailedFeedbackAnswer (questionId, employeeId, answer, date) VALUES ?";
 
 export const SELECT_USER_PREFERENCES = `
   SELECT dietaryPreference, spiceLevel, cuisineType, sweetTooth 

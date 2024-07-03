@@ -3,6 +3,12 @@ import { IFoodCategory } from "../interface/IFoodCategory";
 import { Role } from "../enum/Role";
 import { requestMenu, rl } from "./clientOperation";
 import { socket } from "./client";
+import { IFoodItemPreference } from "../interface/IUserPreference";
+import {
+  CuisineType,
+  DietaryPreference,
+  SpiceLevel,
+} from "../enum/UserPreferences";
 
 const getFoodCategories = async (): Promise<IFoodCategory[]> => {
   return new Promise((resolve, reject) => {
@@ -18,185 +24,228 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
 };
 
 export const addFoodItem = async (role: Role) => {
-  rl.question("Enter Food Item Name: ", (name) => {
-    rl.question("Enter Food Item Price: ", (price) => {
-      const itemPrice = parseFloat(price);
-      if (isNaN(itemPrice)) {
-        console.error("Invalid price. Please enter a valid number.");
+  const foodItem: IFoodItem = await askFoodItemDetails();
+  const foodItemPreference: IFoodItemPreference =
+    await askFoodItemPreferences();
+
+  socket.emit("addFoodItem", foodItem, foodItemPreference);
+
+  socket.off("addFoodItemResponse");
+  socket.on(
+    "addFoodItemResponse",
+    (response: { success: boolean; message: string }) => {
+      if (response.success) {
+        console.log(`*${response.message}*`);
+        socket.emit(
+          "sendNotificationToChefAndEmployee",
+          `A New Item has been added ! \n Name : ${foodItem.name} \n Price : ${foodItem.price}`,
+          false
+        );
+        socket.off("chefAndEmployeeNotificationResponse");
+        socket.on("chefAndEmployeeNotificationResponse", (response) => {
+          if (response.success) {
+            console.log(response.message);
+          } else {
+            console.error(response.message);
+          }
+          requestMenu(role);
+        });
+      } else {
+        console.log(response.message);
         addFoodItem(role);
-        return;
       }
+    }
+  );
+};
 
-      getFoodCategories()
-        .then((categories: IFoodCategory[]) => {
-          console.log("Available Categories:");
-          categories.forEach((category: IFoodCategory) => {
-            console.log(`${category.id}. ${category.name}`);
-          });
+const askFoodItemDetails = (): Promise<IFoodItem> => {
+  return new Promise((resolve, reject) => {
+    rl.question("Enter Food Item Name: ", (name) => {
+      rl.question("Enter Food Item Price: ", (price) => {
+        const itemPrice = parseFloat(price);
+        if (isNaN(itemPrice)) {
+          console.error("Invalid price. Please enter a valid number.");
+          reject("Invalid price");
+          return;
+        }
 
-          rl.question(
-            "Enter the number corresponding to the Food Category: ",
-            (categoryId) => {
-              const category = categories.find(
-                (cat) => cat.id.toString() === categoryId
-              );
-              if (!category) {
-                console.error(
-                  "Invalid category. Please choose a valid category."
+        getFoodCategories()
+          .then((categories: IFoodCategory[]) => {
+            console.log("Available Categories:");
+            categories.forEach((category: IFoodCategory) => {
+              console.log(`${category.id}. ${category.name}`);
+            });
+
+            rl.question(
+              "Enter the number corresponding to the Food Category: ",
+              (categoryId) => {
+                const category = categories.find(
+                  (cat) => cat.id.toString() === categoryId
                 );
-                addFoodItem(role);
-                return;
-              }
-              rl.question("Enter the meal type id:", (mealTypeId) => {
-                const foodItem: IFoodItem = {
-                  name,
-                  price: itemPrice,
-                  availabilityStatus: true,
-                  foodCategoryId: parseInt(categoryId),
-                  mealTypeId: parseInt(mealTypeId),
-                };
+                if (!category) {
+                  console.error(
+                    "Invalid category. Please choose a valid category."
+                  );
+                  reject("Invalid category");
+                  return;
+                }
 
-                socket.emit("addFoodItem", foodItem);
-
-                socket.off("addFoodItemResponse");
-                socket.on(
-                  "addFoodItemResponse",
-                  (response: { success: boolean; message: string }) => {
-                    if (response.success) {
-                      console.log(`*${response.message}*`);
-                      socket.emit(
-                        "sendNotificationToChefAndEmployee",
-                        `A New Item has been added ! \n Name : ${foodItem.name} \n Price : ${foodItem.price}`,
-                        false
-                      );
-                      socket.off("chefAndEmployeeNotificationResponse");
-                      socket.on(
-                        "chefAndEmployeeNotificationResponse",
-                        (response) => {
-                          if (response.success) {
-                            console.log(response.message);
-                          } else {
-                            console.error(response.message);
-                          }
-                          requestMenu(role);
-                        }
-                      );
-                    } else {
-                      console.log(response.message);
-                      addFoodItem(role);
-                    }
+                rl.question(
+                  "Enter the meal type id: 1--> Breakfast , 2--> Lunch , 3--> Dinner",
+                  (mealTypeId) => {
+                    const foodItem: IFoodItem = {
+                      name,
+                      price: itemPrice,
+                      availabilityStatus: true,
+                      foodCategoryId: parseInt(categoryId),
+                      mealTypeId: parseInt(mealTypeId),
+                    };
+                    resolve(foodItem);
                   }
                 );
-              });
-            }
-          );
-        })
-        .catch((error) => {
-          console.error("Error fetching categories:", error);
-          console.log("Please try again.");
-          addFoodItem(role);
-        });
+              }
+            );
+          })
+          .catch((error) => {
+            console.error("Error fetching categories:", error);
+            console.log("Please try again.");
+            reject("Error fetching categories");
+          });
+      });
     });
   });
 };
 
-export const updateFoodItem = async (role: Role) => {
-  try {
-    const itemName = await new Promise<string>((resolve) => {
-      rl.question("Enter Food Item Name to update: ", (itemName) => {
-        resolve(itemName);
-      });
-    });
-
-    socket.emit("checkFoodItemExistence", itemName);
-
-    socket.off("checkFoodItemExistenceResponse");
-    socket.on(
-      "checkFoodItemExistenceResponse",
-      async (response: { exists: boolean }) => {
-        if (!response.exists) {
-          console.log(
-            "Food item does not exist.Please enter some other Food Item"
-          );
-          updateFoodItem(role);
+const askFoodItemPreferences = (): Promise<IFoodItemPreference> => {
+  return new Promise((resolve, reject) => {
+    rl.question(
+      `1) Please select one - ${Object.values(DietaryPreference).join(
+        " / "
+      )}: `,
+      (preferenceTypeInput) => {
+        const preferenceType = preferenceTypeInput
+          .trim()
+          .toLowerCase() as DietaryPreference;
+        if (
+          !Object.values(DietaryPreference)
+            .map((p) => p.toLowerCase())
+            .includes(preferenceType)
+        ) {
+          console.error("Invalid choice. Please select a valid option.");
+          reject("Invalid dietary preference");
           return;
         }
 
-        rl.question("Enter new Food Item Name: ", (newName) => {
-          rl.question("Enter new Food Item Price: ", (newPrice) => {
-            const itemPrice = parseFloat(newPrice);
-            if (isNaN(itemPrice)) {
-              console.error("Invalid price. Please enter a valid number.");
-              updateFoodItem(role);
+        rl.question(
+          "2) Please select your spice level - High / Medium / Low: ",
+          (spiceLevelInput) => {
+            const spiceLevel = spiceLevelInput
+              .trim()
+              .toLowerCase() as SpiceLevel;
+            if (
+              !Object.values(SpiceLevel)
+                .map((s) => s.toLowerCase())
+                .includes(spiceLevel)
+            ) {
+              console.error("Invalid choice. Please select a valid option.");
+              reject("Invalid spice level");
               return;
             }
 
-            getFoodCategories()
-              .then((categories: IFoodCategory[]) => {
-                console.log("Available Categories:");
-                categories.forEach((category: IFoodCategory) => {
-                  console.log(`${category.id}. ${category.name}`);
-                });
+            rl.question(
+              "3) What do you prefer most - North Indian / South Indian / Other: ",
+              (cuisineTypeInput) => {
+                const cuisineType = cuisineTypeInput
+                  .trim()
+                  .toLowerCase() as CuisineType;
+                if (
+                  !Object.values(CuisineType)
+                    .map((c) => c.toLowerCase())
+                    .includes(cuisineType)
+                ) {
+                  console.error(
+                    "Invalid choice. Please select a valid option."
+                  );
+                  reject("Invalid cuisine type");
+                  return;
+                }
 
                 rl.question(
-                  "Enter the number corresponding to the new Food Category: ",
-                  (categoryId) => {
-                    const category = categories.find(
-                      (cat) => cat.id.toString() === categoryId
-                    );
-                    if (!category) {
+                  "4) Do you have a sweet tooth? (Yes / No): ",
+                  (sweetToothInput) => {
+                    const sweetTooth = sweetToothInput.trim().toLowerCase();
+                    if (!["yes", "no"].includes(sweetTooth)) {
                       console.error(
-                        "Invalid category. Please choose a valid category."
+                        "Invalid choice. Please select a valid option."
                       );
-                      updateFoodItem(role);
+                      reject("Invalid sweet tooth");
                       return;
                     }
 
-                    rl.question("Enter the meal type Id:", (mealTypeId) => {
-                      const updatedFoodItem: IFoodItem = {
-                        name: newName,
-                        price: itemPrice,
-                        availabilityStatus: true,
-                        foodCategoryId: category.id,
-                        mealTypeId: parseInt(mealTypeId),
-                      };
-
-                      socket.emit("updateFoodItem", {
-                        itemName,
-                        updatedFoodItem,
-                      });
-
-                      socket.off("updateFoodItemResponse");
-                      socket.on(
-                        "updateFoodItemResponse",
-                        (response: { success: boolean; message: string }) => {
-                          if (response.success) {
-                            console.log(`*${response.message}*`);
-                            requestMenu(role);
-                          } else {
-                            console.log(response.message);
-                            updateFoodItem(role);
-                          }
-                        }
-                      );
-                    });
+                    const preferences: IFoodItemPreference = {
+                      dietaryPreference: preferenceType,
+                      spiceLevel,
+                      cuisineType,
+                      sweetTooth: sweetTooth === "yes",
+                    };
+                    resolve(preferences);
                   }
                 );
-              })
-              .catch((error) => {
-                console.error("Error fetching categories:", error);
-                console.log("Please try again.");
-                updateFoodItem(role);
-              });
-          });
-        });
+              }
+            );
+          }
+        );
       }
     );
-  } catch (error) {
-    console.error("Error in updating food item:", error);
-    console.log("Please try again.");
-    updateFoodItem(role);
-  }
+  });
+};
+
+export const updateFoodItem = async (role: Role) => {
+  const itemName = await new Promise<string>((resolve) => {
+    rl.question("Enter Food Item Name to update: ", (itemName) => {
+      resolve(itemName);
+    });
+  });
+
+  socket.emit("checkFoodItemExistence", itemName);
+
+  socket.off("checkFoodItemExistenceResponse");
+  socket.on(
+    "checkFoodItemExistenceResponse",
+    async (response: { exists: boolean }) => {
+      if (!response.exists) {
+        console.log(
+          "Food item does not exist.Please enter some other Food Item"
+        );
+        updateFoodItem(role);
+        return;
+      }
+
+      console.log("New Food Item Details:");
+      const newFoodItem: IFoodItem = await askFoodItemDetails();
+      const newFoodItemPreference: IFoodItemPreference = await askFoodItemPreferences();
+
+      socket.emit("updateFoodItem", 
+        itemName,
+        newFoodItem,
+        newFoodItemPreference
+      );
+
+      socket.off("updateFoodItemResponse");
+      socket.on(
+        "updateFoodItemResponse",
+        (response: { success: boolean; message: string }) => {
+          if (response.success) {
+            console.log(`*${response.message}*`);
+            requestMenu(role);
+          } else {
+            console.log(response.message);
+            updateFoodItem(role);
+          }
+        }
+      );
+    }
+  );
 };
 
 export const deleteFoodItem = async (role: Role) => {
@@ -229,7 +278,6 @@ export const deleteFoodItem = async (role: Role) => {
             }
             requestMenu(role);
           });
-          
         } else {
           console.log(response.message);
           deleteFoodItem(role);

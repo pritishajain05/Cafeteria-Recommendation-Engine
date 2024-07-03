@@ -10,7 +10,7 @@ export enum DietaryPreference {
     Low = "Low",
   }
 
-  export enum CuisinePreference {
+  export enum CuisineType {
     NorthIndian = "North Indian",
     SouthIndian = "South Indian",
     Other = "Other",

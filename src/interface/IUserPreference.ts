@@ -1,16 +1,16 @@
-import { CuisinePreference, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
+import { CuisineType, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
 
 export interface IUserPreference {
     dietaryPreference: DietaryPreference;
     spiceLevel: SpiceLevel;
-    cuisineType: CuisinePreference;
+    cuisineType: CuisineType;
     sweetTooth: boolean;
   }
 
   export interface IFoodItemPreference {
-    foodItemId: number
+    foodItemId?: number
     dietaryPreference: DietaryPreference
     spiceLevel: SpiceLevel
-    cuisineType: CuisinePreference
+    cuisineType: CuisineType;
     sweetTooth: boolean
   }
