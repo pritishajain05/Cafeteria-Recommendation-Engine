@@ -20,21 +20,21 @@ export const promptLogin = () => {
   });
 }
 
-export const requestMenu = (role: Role ) => {
-  socket.emit("getRoleBasedMenu", { role });
+export const requestMenu = (role: Role ,employeeId:number) => {
+  socket.emit("getRoleBasedMenu", { role,employeeId });
 };
 
-export const handleMenuOptionSelection = async (role:Role) => {
+export const handleMenuOptionSelection = async (role:Role , employeeId:number) => {
   rl.question("Choose an option: ", async (option: string) => {
       switch (role) {
         case Role.Admin:
-          await handleAdminOption(option,role);      
+          await handleAdminOption(option,role ,employeeId);      
           break;
         case Role.Chef:
-          await handleChefOption(option , role );       
+          await handleChefOption(option , role ,employeeId);       
           break;
         case Role.Employee:
-          await handleEmployeeOption(option ,role );
+          await handleEmployeeOption(option ,role ,employeeId);
           break;
         default:
           console.log("Invalid Role");

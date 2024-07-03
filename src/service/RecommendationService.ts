@@ -1,13 +1,19 @@
 import { positiveWords, negativeWords, positiveSentences, negativeSentences } from '../utils/constant';
-import { FoodItemRepository } from '../repository/FoodItemRepository';
-import { FeedbackRepository } from '../repository/FeedbackRepository';
 import { IFeedback } from '../interface/IFeedback';
-import { IDiscardFoodItem, IMenuItem, IRolledOutmenu } from '../interface/IFoodItem';
+import { IMenuItem } from '../interface/IFoodItem';
+import { DiscardFoodItemService } from './DiscardFoodItemService';
+import { FoodItemService } from './FoodItemService';
+import { FeedbackService } from './FeedbackService';
+import { RolledOutFoodItemService } from './RolledOuFoodItemService';
+import { IRolledOutFoodItem } from '../interface/IRolledOutFoodItem';
+import { IDiscardFoodItem } from '../interface/IDiscardFoodItem';
 
 export class RecommendationService {
 
-  private foodItemRepository = new FoodItemRepository();
-  private feedbackRepository = new FeedbackRepository();
+  private foodItemService = new FoodItemService();
+  private discardFoodItemService = new DiscardFoodItemService();
+  private feedbackService = new FeedbackService();
+  private rolledOutFoodItemService = new RolledOutFoodItemService();
   private foodItems: IMenuItem[] = [];
   private feedbacks: IFeedback[] = [];
 
@@ -17,18 +23,18 @@ export class RecommendationService {
 
   private async initializeData(): Promise<void> {
     try {
-      this.foodItems = await this.foodItemRepository.getAllFoodItems();
-      this.feedbacks = await this.feedbackRepository.getAllFeedback();
+      this.foodItems = await this.foodItemService.getAllFoodItem();
+      this.feedbacks = await this.feedbackService.getAllFeedback();
     } catch (error) {
       console.error('Error initializing data:', error);
       throw error;
     }
   }
 
-  async getRolledOutItemsWithFeedback(): Promise<IRolledOutmenu[]> {
+  async getRolledOutItemsWithFeedback(): Promise<IRolledOutFoodItem[]> {
     try {
       const feedbackMap = this.calculateFeedbackMap();
-      const rolledOutMenu = await this.foodItemRepository.getRolledOutItems();
+      const rolledOutMenu = await this.rolledOutFoodItemService.getRolledOutItem();
 
       return rolledOutMenu.map(item => {
         const feedback = feedbackMap.get(item.foodItemId) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
@@ -159,7 +165,7 @@ export class RecommendationService {
     } 
   }
 
-  async getDiscardFoodItems(): Promise<void> {
+  async getDiscardFoodItem(): Promise<void> {
     try {
       const discardFoodItems: IDiscardFoodItem[] = [];
 
@@ -177,9 +183,7 @@ export class RecommendationService {
           });
         }
       });
-
-      console.table(discardFoodItems);
-      await this.foodItemRepository.addDiscardFoodItems(discardFoodItems);
+      await this.discardFoodItemService.addDiscardFoodItem(discardFoodItems);
     } catch (error) {
       console.error("Error fetching discard food items:", error);
       throw error;

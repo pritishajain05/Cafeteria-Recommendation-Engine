@@ -1,10 +1,12 @@
 import { MealType } from "../enum/MealType";
 import { Role } from "../enum/Role";
-import { IMenuItem, IRolledOutmenu } from "../interface/IFoodItem";
+import { IDiscardFoodItem } from "../interface/IDiscardFoodItem";
+import { IMenuItem } from "../interface/IFoodItem";
+import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { socket } from "./client";
 import { requestMenu, rl } from "./clientOperation";
 
-export const viewRecommendedFoodItems = async (role: Role) => {
+export const viewRecommendedFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("viewRecommendedFoodItems");
 
   let itemsFound = false;
@@ -37,7 +39,7 @@ export const viewRecommendedFoodItems = async (role: Role) => {
     if (!itemsFound) {
       console.log("No items for any meal found.");
     }
-    requestMenu(role);
+    requestMenu(role,employeeId);
   });
 };
 
@@ -57,14 +59,14 @@ const promptUserForIds = (mealType: string) => {
   });
 };
 
-export const rollOutMenuForNextDay = async (role: Role) => {
+export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => {
   socket.emit("checkRolledOutMenu");
   socket.once("checkRolledOutMenuResponse", (data) => {
     if (data.menuRolledOut) {
       console.log(
         "Menu has already been rolled out for today. You cannot roll out the menu again."
       );
-      requestMenu(role);
+      requestMenu(role,employeeId);
     } else {
       socket.emit("viewAllFoodItems");
       socket.on("viewAllFoodItemsResponse", (data) => {
@@ -129,14 +131,17 @@ export const rollOutMenuForNextDay = async (role: Role) => {
               socket.on("employeeNotificationResponse", (response) => {
                 if (response.success) {
                   console.log(response.message);
+                  requestMenu(role,employeeId);
                 } else {
                   console.error(response.message);
+                  requestMenu(role,employeeId);
                 }
               });
             } else {
               console.error(response.message);
+              requestMenu(role,employeeId);
             }
-            requestMenu(role);
+           
           });
         });
       });
@@ -144,7 +149,7 @@ export const rollOutMenuForNextDay = async (role: Role) => {
   });
 };
 
-export const finalizeFoodItems = async (role: Role) => {
+export const finalizeFoodItemsForNextDay = async (role: Role ,employeeId:number) => {
   socket.emit("getRolledOutMenu");
 
   socket.off("rolledOutMenuResponse");
@@ -154,7 +159,7 @@ export const finalizeFoodItems = async (role: Role) => {
       return;
     }
 
-    const rolledOutMenu: IRolledOutmenu[] = data.rolledOutMenu;
+    const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
     const topBreakfastItem = findTopVotedItem(rolledOutMenu, "Breakfast");
     const topLunchItem = findTopVotedItem(rolledOutMenu, "Lunch");
     const topDinnerItem = findTopVotedItem(rolledOutMenu, "Dinner");
@@ -164,21 +169,20 @@ export const finalizeFoodItems = async (role: Role) => {
       topLunchItem,
       topDinnerItem,
     ].filter((item) => item !== undefined);
-    console.log(finalizedItems, "finalmenu");
-
+    
     console.log("Tomorrow's Menu");
     console.log("Breakfast Item:");
-    console.table([topBreakfastItem]);
+    console.table(topBreakfastItem);
 
     console.log("Lunch Item:");
-    console.table([topLunchItem]);
+    console.table(topLunchItem);
 
     console.log("Dinner Item:");
-    console.table([topDinnerItem]);
+    console.table(topDinnerItem);
 
     socket.emit("storeFinalizedItems", finalizedItems);
 
-    socket.on("storefinalizedItemsResponse", (response) => {
+    socket.once("storefinalizedItemsResponse", (response) => {
       if (response.success) {
         console.log(response.message);
         socket.emit(
@@ -190,30 +194,34 @@ export const finalizeFoodItems = async (role: Role) => {
         socket.on("employeeNotificationResponse", (response) => {
           if (response.success) {
             console.log(response.message);
+            requestMenu(role,employeeId);
           } else {
             console.error(response.message);
+            requestMenu(role,employeeId);
           }
         });
       } else {
         console.error(response.message);
       }
-      requestMenu(role);
+      
     });
   });
 };
 
 const findTopVotedItem = (
-  menu: IRolledOutmenu[],
-  mealType: string
-): IRolledOutmenu | undefined => {
+  menu: IRolledOutFoodItem[],
+  mealType: string,
+): IRolledOutFoodItem[] => {
   const filteredItems = menu.filter((item) => item.mealType === mealType);
   if (filteredItems.length === 0) {
-    return undefined;
+    return [];
   }
-  return filteredItems.sort((a, b) => b.votes - a.votes)[0];
+  return filteredItems
+    .sort((a, b) => b.votes - a.votes)
+    .slice(0, 2);
 };
 
-export const viewDiscardFoodItems = async (role: Role) => {
+export const viewDiscardFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("getDiscardFooditems");
   socket.off("getDiscardFoodItemResponse");
   socket.on("getDiscardFoodItemResponse", (data) => {
@@ -224,7 +232,12 @@ export const viewDiscardFoodItems = async (role: Role) => {
     }
 
     console.log("Discard Menu Item List:");
-    console.table(data.discardFoodItems);
+    console.table(
+      data.discardFoodItems.map((item: IDiscardFoodItem) => {
+        const { date, ...rest } = item;
+        return { ...rest, date: date ? new Date(date).toLocaleDateString() : "N/A" };
+      })
+    );
 
     rl.question(
       `Would you like to \n (1) Remove an item or \n (2) Get detailed feedback? or \n exit to return to main Menu `,
@@ -273,7 +286,7 @@ export const viewDiscardFoodItems = async (role: Role) => {
                   console.log(
                     `Notification sent to employees to provide feedback on ${itemName}.`
                   );
-                  requestMenu(role);
+                  requestMenu(role,employeeId);
                 } else {
                   console.error(
                     `Failed to send notification: ${response.message}`
@@ -283,7 +296,7 @@ export const viewDiscardFoodItems = async (role: Role) => {
             }
           );
         } else if (answer === "exit") {
-          requestMenu(role);
+          requestMenu(role,employeeId);
         } else {
           console.log("Invalid choice. Please enter 1 or 2.");
         }

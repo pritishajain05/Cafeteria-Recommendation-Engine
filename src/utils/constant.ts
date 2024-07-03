@@ -56,7 +56,7 @@ export const GET_ROLLED_OUT_ITEMS: string = `
 export const CHECK_ROLLED_OUT_MENU_EXISTENCE: string =
   "SELECT COUNT(*) as count FROM rolloutFoodItem WHERE rolloutDate=?";
 
-export const ADD_VOTE_FOR_ROLLED_OUT_ITEMS: string = `UPDATE rolloutFoodItem SET votes = votes + 1 WHERE foodItemId = ? AND date= ?`;
+export const ADD_VOTE_FOR_ROLLED_OUT_ITEMS: string = `UPDATE rolloutFoodItem SET votes = votes + 1 WHERE foodItemId = ? AND rolloutDate = ?`;
 
 export const ADD_FINAL_FOOD_ITEM: string = `
           INSERT INTO finalFoodItem (rolloutFoodItemId, date)
@@ -124,7 +124,7 @@ export const GET_EMPLOYEE_FEEDBACK_ANSWERS: string =
   "SELECT * FROM detailedFeedbackAnswer WHERE employeeId = ?";
 
 export const STORE_FEEDBACK_ANSWERS: string =
-  "INSERT INTO detailedFeedbackAnswer (questionId, employeeId, answer, date) VALUES ?";
+  "INSERT INTO detailedFeedbackAnswer (questionId, employeeId, answer, date) VALUES (?,?,?,?)";
 
 export const SELECT_USER_PREFERENCES = `
   SELECT dietaryPreference, spiceLevel, cuisineType, sweetTooth 
@@ -133,7 +133,7 @@ export const SELECT_USER_PREFERENCES = `
 `;
 
 export const SELECT_ALL_FOOD_ITEM_PREFERENCES = `
-  SELECT * FROM FoodItemPreferences
+  SELECT * FROM FoodItemPreference
 `;
 
 export const positiveWords: string[] = [

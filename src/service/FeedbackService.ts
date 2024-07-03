@@ -8,11 +8,15 @@ import { FoodItemRepository } from "./../repository/FoodItemRepository";
 
 export class FeedbackService {
   private feedbackRepository = new FeedbackRepository();
-  private foodItemRepository = new FoodItemRepository();
+ 
+  async getAllFeedback(): Promise<IFeedback[]> {
+    return await this.feedbackRepository.getAllFeedback();
+  }
 
   async getFeedbackByFoodItemId(id: number): Promise<IFeedback[]> {
     return await this.feedbackRepository.getFeedbackByFoodItemId(id);
   }
+
 
   async addFeedbackOnItem(
     data: IFeedback
@@ -25,17 +29,6 @@ export class FeedbackService {
         success: false,
       };
     }
-
-    // const isItemInFinalMenu = await this.foodItemRepository.isItemInFinalMenu(
-    //   data
-    // );
-    // if (!isItemInFinalMenu) {
-    //   return {
-    //     message: "Please give the feedback only for the item eaten today !",
-    //     success: false,
-    //   };
-    // }
-
     return await this.feedbackRepository.addFeedbackOnItem(data);
   }
 

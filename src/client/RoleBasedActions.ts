@@ -6,42 +6,41 @@ import {
 } from "./AdminActions";
 import { Role } from "../enum/Role";
 import { socket } from "./client";
-import { rl } from "./clientOperation";
+import { requestMenu, rl } from "./clientOperation";
 import {
-  finalizeFoodItems,
+  finalizeFoodItemsForNextDay,
   rollOutMenuForNextDay,
   viewDiscardFoodItems,
-  viewRecommendedFoodItems,
 } from "./ChefActions";
 import {
   giveDetailedFeedback,
   giveFeedbackOnItem,
-  selectFoodItemsForNextDay,
   updateProfile,
   viewFeedbackOnItem,
   viewFinalMenu,
   viewNotification,
+  voteForFoodItemsForNextDay,
 } from "./EmployeeActions";
 
-export const handleAdminOption = async (option: string, role: Role) => {
+export const handleAdminOption = async (option: string, role: Role , employeeId:number) => {
   switch (option) {
     case "1":
-      await addFoodItem(role);
+      await viewMenu(role ,employeeId);
       break;
     case "2":
-      await updateFoodItem(role);
+      await addFoodItem(role,employeeId);
       break;
     case "3":
-      await deleteFoodItem(role);
+      await updateFoodItem(role,employeeId);
       break;
     case "4":
-      await viewMenu(role);
+      await deleteFoodItem(role,employeeId);
       break;
     case "5":
-      await viewFeedbackOnItem(role);
+      await viewFeedbackOnItem(role,employeeId);
       break;
     case "6":
-      await viewDiscardFoodItems(role);
+      await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
       rl.close();
@@ -50,28 +49,29 @@ export const handleAdminOption = async (option: string, role: Role) => {
       break;
     default:
       console.log("Invalid option.");
+      requestMenu(role,employeeId);
   }
 };
 
-export const handleChefOption = async (option: string, role: Role) => {
+export const handleChefOption = async (option: string, role: Role , employeeId:number) => {
   switch (option) {
     case "1":
-      await viewMenu(role);
+      await viewMenu(role,employeeId);
       break;
     case "2":
-      await viewRecommendedFoodItems(role);
+      await rollOutMenuForNextDay(role,employeeId);
       break;
     case "3":
-      await rollOutMenuForNextDay(role);
+      await finalizeFoodItemsForNextDay(role,employeeId);
       break;
     case "4":
-      await finalizeFoodItems(role);
+      await viewFeedbackOnItem(role,employeeId);
+      break;
+    case "5":
+      await viewNotification(role,employeeId);
       break;
     case "6":
-      await viewNotification(role);
-      break;
-    case "7":
-      await viewDiscardFoodItems(role);
+      await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
       rl.close();
@@ -80,34 +80,35 @@ export const handleChefOption = async (option: string, role: Role) => {
       break;
     default:
       console.log("Invalid option.");
+      requestMenu(role,employeeId);
   }
 };
 
-export const handleEmployeeOption = async (option: string, role: Role) => {
+export const handleEmployeeOption = async (option: string, role: Role , employeeId:number) => {
   switch (option) {
     case "1":
-      await viewMenu(role);
+      await viewMenu(role,employeeId);
       break;
     case "2":
-      await selectFoodItemsForNextDay(role);
+      await voteForFoodItemsForNextDay(role,employeeId,false);
       break;
     case "3":
-      await viewFeedbackOnItem(role);
+      await viewFeedbackOnItem(role,employeeId);
       break;
     case "4":
-      await giveFeedbackOnItem(role);
+      await giveFeedbackOnItem(role,employeeId);
       break;
     case "5":
-      await viewNotification(role);
+      await viewNotification(role,employeeId);
       break;
     case "6":
-      await updateProfile(role);
+      await viewFinalMenu(role,employeeId,false);
       break;
     case "7":
-      await viewFinalMenu(role);
+      await giveDetailedFeedback(role,employeeId,false);
       break;
     case "8":
-      await giveDetailedFeedback(role);
+      await updateProfile(role,employeeId);
       break;
     case "logout":
       rl.close();
@@ -116,7 +117,6 @@ export const handleEmployeeOption = async (option: string, role: Role) => {
       break;
     default:
       console.log("Invalid option.");
+      requestMenu(role , employeeId);
   }
 };
-
-

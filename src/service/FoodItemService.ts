@@ -1,13 +1,6 @@
 import { IFoodCategory } from "../interface/IFoodCategory";
-import {
-  IFinalMenu,
-  IFoodItem,
-  IMenuItem,
-  IRolledOutmenu,
-} from "../interface/IFoodItem";
-import {
-  IFoodItemPreference
-} from "../interface/IUserPreference";
+import { IFoodItem, IFoodItemPreference, IMenuItem } from "../interface/IFoodItem";
+
 import { FoodItemRepository } from "../repository/FoodItemRepository";
 
 export class FoodItemService {
@@ -15,6 +8,10 @@ export class FoodItemService {
 
   async getAllCategories(): Promise<IFoodCategory[] | null> {
     return await this.foodItemRepository.getAllCategories();
+  }
+
+  async checkFoodItemExistence(name: string): Promise<boolean> {
+    return await this.foodItemRepository.checkFoodItemExistence(name);
   }
 
   async addFoodItem(
@@ -68,36 +65,8 @@ export class FoodItemService {
     return { success: result.success, message: result.message };
   }
 
-  async viewAllFoodItems(): Promise<IMenuItem[] | null> {
-    return await this.foodItemRepository.getAllFoodItems();
-  }
-
-  async checkRolledOutMenu(): Promise<boolean> {
-    return await this.foodItemRepository.checkRolledOutMenu();
-  }
-
-  async addRolledOutItems(selectedIds: number[]): Promise<{ message: string }> {
-    return await this.foodItemRepository.addRolledOutItems(selectedIds);
-  }
-
-  async getRolledOutItems(): Promise<IRolledOutmenu[]> {
-    return await this.foodItemRepository.getRolledOutItems();
-  }
-
-  async voteForRolledOutItems(
-    votedIds: number[]
-  ): Promise<{ message: string }> {
-    return await this.foodItemRepository.addVoteForRolledOutItems(votedIds);
-  }
-
-  async addFinalFoodItem(
-    items: IRolledOutmenu[]
-  ): Promise<{ message: string; success: boolean }> {
-    return await this.foodItemRepository.addFinalFoodItem(items);
-  }
-
-  async getFinalFoodItem(): Promise<IFinalMenu[]> {
-    return await this.foodItemRepository.getFinalFoodItem();
+  async getAllFoodItem(): Promise<IMenuItem[]> {
+    return await this.foodItemRepository.getAllFoodItem();
   }
 
   async getAllFoodItemPreferences(): Promise<IFoodItemPreference[]> {

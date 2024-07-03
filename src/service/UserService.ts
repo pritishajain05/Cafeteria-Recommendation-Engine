@@ -1,6 +1,5 @@
 import { UserRepository } from "../repository/UserRepository";
-import { IUser } from "../interface/IUser";
-import { IUserPreference } from "../interface/IUserPreference";
+import { IUser, IUserPreference } from "../interface/IUser";
 
 export class UserService {
     private userRepository = new UserRepository();
@@ -14,7 +13,7 @@ export class UserService {
         return await this.userRepository.updateUserPreferences(employeeId,preferences);
     }
 
-    async getUserPreferences(employeeId:number):Promise<IUserPreference> {
-        return await this.userRepository.getUserPreferences(employeeId)
+    async getUserPreference(employeeId:number):Promise<IUserPreference> {
+        return await this.userRepository.getUserPreference(employeeId)
     }
 }

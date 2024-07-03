@@ -1,42 +1,63 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import {
   handleMenuOptionSelection,
   promptLogin,
   requestMenu,
 } from "./clientOperation";
 
-export const socket = io("http://localhost:3000");
+class Client {
+  private socket: Socket;
+  
+  constructor(url: string) {
+    this.socket = io(url);
+    this.initialize();
+  }
 
-export let employeeId: number;
+  private initialize(): void {
+    this.socket.on("connect", this.onConnect);
+    this.socket.on("loginResponse", this.onLoginResponse);
+    this.socket.on("menuResponse", this.onMenuResponse);
+    this.socket.on("disconnect", this.onDisconnect);
+  }
 
-socket.on("connect", () => {
-  console.log("Connected to server");
-  promptLogin();
-});
-
-socket.on("loginResponse", (data) => {
-  if (data.error) {
-    console.log(data.error);
+  private onConnect(): void {
+    console.log("Connected to server");
     promptLogin();
-  } else {
-    employeeId = data.employeeId;
-    console.log(`Logged in as ${data.role}`);
-    requestMenu(data.role);
   }
-});
 
-socket.on("menuResponse", (data) => {
-  if (data.error) {
-    console.log(data.error);
-  } else {
-    console.log("Menu:");
-    data.menu.forEach((item: string) => {
-      console.log(item);
-    });
-    handleMenuOptionSelection(data.role);
+  private onLoginResponse(data: any): void {
+    if (data.error) {
+      console.log(data.error);
+      promptLogin();
+    } else {
+      console.log(`Logged in as ${data.role}`);
+      requestMenu(data.role , data.employeeId);
+    }
   }
-});
 
-socket.on("disconnect", () => {
-  console.log("Connection closed");
-});
+  private onMenuResponse(data: any): void {
+    if (data.error) {
+      console.log(data.error);
+    } else {
+      console.log("Menu:");
+      data.menu.forEach((item: string) => {
+        console.log(item);
+      });
+      handleMenuOptionSelection(data.role , data.employeeId);
+    }
+  }
+
+  private onDisconnect(): void {
+    console.log("Connection closed");
+  }
+
+  public getSocket(): Socket {
+    return this.socket;
+  }
+
+}
+
+const client = new Client("http://localhost:3000");
+export const socket = client.getSocket();
+
+

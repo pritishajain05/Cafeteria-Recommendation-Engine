@@ -1,13 +1,14 @@
 import { Role } from "../enum/Role";
-import { employeeId, socket } from "./client";
-import { IFinalMenu, IRolledOutmenu } from "./../interface/IFoodItem";
+import { socket } from "./client";
 import { requestMenu, rl } from "./clientOperation";
 import { INotification } from "../interface/INotification";
 import { CuisineType, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
 import { IDetailedFeedbackAnswer, IDetailedFeedbackQuestion } from "../interface/IFeedback";
-import { IFoodItemPreference, IUserPreference } from "../interface/IUserPreference";
 import { IFeedback } from './../interface/IFeedback';
-
+import { IUserPreference } from "../interface/IUser";
+import { IFoodItemPreference } from "../interface/IFoodItem";
+import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
+import { IFinalFoodItem } from "../interface/IFinalFoodItem";
 
 const promptUserForIds = (mealType: string) => {
   return new Promise<number[]>((resolve) => {
@@ -53,7 +54,7 @@ const getFoodItemPreferences = async () :Promise<IFoodItemPreference[]>=> {
 };
 
 
-const sortMenuItems = (menuItems: IRolledOutmenu[], foodPreferences: IFoodItemPreference[], userPreferences: IUserPreference) => {
+const sortMenuItems = (menuItems: IRolledOutFoodItem[], foodPreferences: IFoodItemPreference[], userPreferences: IUserPreference) => {
   const sortedItems = menuItems.sort((a, b) => {
     const prefA = foodPreferences.find((pref) => pref.foodItemId === a.foodItemId);
     const prefB = foodPreferences.find((pref) => pref.foodItemId === b.foodItemId);
@@ -82,7 +83,7 @@ const sortMenuItems = (menuItems: IRolledOutmenu[], foodPreferences: IFoodItemPr
 };
 
 
-export const selectFoodItemsForNextDay = async (role: Role) => {
+export const voteForFoodItemsForNextDay = async (role: Role ,employeeId:number,fromNotification:boolean) => {
   socket.emit("getRolledOutMenu");
 
   socket.off("rolledOutMenuResponse");
@@ -92,25 +93,25 @@ export const selectFoodItemsForNextDay = async (role: Role) => {
       return;
     }
 
-    const rolledOutMenu: IRolledOutmenu[] = data.rolledOutMenu;
+    const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
   
     const userPreferences = await getUserPreferences(employeeId);
     const foodPreferences = await getFoodItemPreferences();
 
     const sortedBreakfastItems = sortMenuItems(
-      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Breakfast"),
+      rolledOutMenu.filter((item: IRolledOutFoodItem) => item.mealType === "Breakfast"),
       foodPreferences,
       userPreferences
     );
 
     const sortedLunchItems = sortMenuItems(
-      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Lunch"),
+      rolledOutMenu.filter((item: IRolledOutFoodItem) => item.mealType === "Lunch"),
       foodPreferences,
       userPreferences
     );
 
     const sortedDinnerItems = sortMenuItems(
-      rolledOutMenu.filter((item: IRolledOutmenu) => item.mealType === "Dinner"),
+      rolledOutMenu.filter((item: IRolledOutFoodItem) => item.mealType === "Dinner"),
       foodPreferences,
       userPreferences
     );
@@ -148,16 +149,24 @@ export const selectFoodItemsForNextDay = async (role: Role) => {
     socket.on("voteForItemsResponse", (response) => {
       if (response.success) {
         console.log("Voted successfully:", response.message);
-        requestMenu(role);
+        if (fromNotification) {
+          askUserChoiceFromNotification(role, employeeId);
+        } else {
+          requestMenu(role, employeeId);
+        }
       } else {
         console.error("Failed to Vote:", response.message);
-        requestMenu(role);
+        if (fromNotification) {
+          askUserChoiceFromNotification(role, employeeId);
+        } else {
+          requestMenu(role, employeeId);
+        }
       }
     });
   });
 };
 
-export const viewFeedbackOnItem = async (role: Role) => {
+export const viewFeedbackOnItem = async (role: Role ,employeeId:number) => {
   rl.question(
     "Enter the id of the fooditem you want to view feedback of:",
     (id) => {
@@ -173,25 +182,25 @@ export const viewFeedbackOnItem = async (role: Role) => {
         if (data.feedback && data.feedback.length > 0) {
           console.log(`Feedback for Food Item ID ${id}:`);
           console.table(data.feedback.map((feedback:IFeedback) => {
-            const { employeeId, ...rest } = feedback;
-            return rest;
+            const { employeeId, date, ...rest } = feedback;
+              return { ...rest, date: new Date(date).toLocaleDateString() };
           }));
         } else {
           console.log("No feedbacks found for this item");
         }
-        requestMenu(role);
+        requestMenu(role,employeeId);
       });
     }
   );
 };
 
-export const giveFeedbackOnItem = async (role: Role) => {
+export const giveFeedbackOnItem = async (role: Role ,employeeId:number) => {
   rl.question(
     "Enter the ID of the food item you want to give feedback on: ",
     (foodItemId) => {
       if (isNaN(Number(foodItemId))) {
         console.error("Invalid ID. Please enter a valid number.");
-        giveFeedbackOnItem(role);
+        giveFeedbackOnItem(role,employeeId);
       }
 
       rl.question("Enter your rating (1-5): ", (rating) => {
@@ -199,7 +208,7 @@ export const giveFeedbackOnItem = async (role: Role) => {
           console.error(
             "Invalid rating. Please enter a number between 1 and 5."
           );
-          giveFeedbackOnItem(role);
+          giveFeedbackOnItem(role,employeeId);
         }
 
         rl.question("Enter your comment: ", (comment) => {
@@ -214,10 +223,10 @@ export const giveFeedbackOnItem = async (role: Role) => {
           socket.on("addFeedbackresponse", (response) => {
             if (response.success) {
               console.log(response.message);
-              requestMenu(role);
+              requestMenu(role,employeeId);
             } else {
               console.error(response.message);
-              giveFeedbackOnItem(role);
+              giveFeedbackOnItem(role,employeeId);
             }
           });
         });
@@ -226,9 +235,8 @@ export const giveFeedbackOnItem = async (role: Role) => {
   );
 };
 
-export const viewNotification = async (role: Role) => {
+export const viewNotification = async (role: Role ,employeeId:number) => {
   socket.emit("getNotifications", employeeId);
-
   socket.off("getNotificationsResponse");
   socket.on("getNotificationsResponse", (data) => {
     if (data.error) {
@@ -241,7 +249,7 @@ export const viewNotification = async (role: Role) => {
       data.notifications.forEach((notification: INotification) => {
         console.log("-------------------");
         console.log(`Message: ${notification.message}`);
-        console.log(`Date: ${notification.date}`);
+        console.log(`Date: ${new Date(notification.date).toLocaleDateString()}`);
         console.log("-------------------");
 
         if (!notification.isSeen) {
@@ -252,36 +260,40 @@ export const viewNotification = async (role: Role) => {
         }
       });
 
-      rl.question(
-        "Enter your choice: \nType exit to return to main menu",
-        (choice) => {
-          switch (choice) {
-            case "1":
-              selectFoodItemsForNextDay(role);
-              break;
-            case "2":
-              viewFinalMenu(role);
-              break;
-            case "3":
-              giveDetailedFeedback(role);
-              break;
-            case "exit":
-              requestMenu(role);
-              break;
-            default:
-              console.log("Invalid choice. Please enter 1 or 2.");
-              viewNotification(role);
-          }
-        }
-      );
+      askUserChoiceFromNotification(role,employeeId);
+      
     } else {
       console.log("No new notifications.");
-      requestMenu(role);
+      requestMenu(role,employeeId);
     }
   });
 };
 
-export const viewFinalMenu = async (role: Role) => {
+const askUserChoiceFromNotification =(role:Role , employeeId:number)=>{
+  rl.question(
+    "Enter your choice: \nType exit to return to main menu",
+    (choice) => {
+      switch (choice) {
+        case "1":
+          voteForFoodItemsForNextDay(role,employeeId,true);
+          break;
+        case "2":
+          viewFinalMenu(role,employeeId,true);
+          break;
+        case "3":
+          giveDetailedFeedback(role,employeeId,true);
+          break;
+        case "exit":
+          requestMenu(role,employeeId);
+          break;
+        default:
+          console.log("Invalid choice. Please enter 1 or 2.");
+          askUserChoiceFromNotification(role,employeeId);
+      }
+    }
+  )
+}
+export const viewFinalMenu = async (role: Role ,employeeId:number,fromNotification:boolean) => {
   socket.emit("getFinalizedMenu");
 
   socket.off("finalizedMenuResponse");
@@ -294,13 +306,13 @@ export const viewFinalMenu = async (role: Role) => {
     if (data.finalMenu && data.finalMenu.length > 0) {
       console.log("Finalized Menu for Tomorrow:");
       const breakfastItems = data.finalMenu.filter(
-        (item: IFinalMenu) => item.mealType === "Breakfast"
+        (item: IFinalFoodItem) => item.mealType === "Breakfast"
       );
       const lunchItems = data.finalMenu.filter(
-        (item: IFinalMenu) => item.mealType === "Lunch"
+        (item: IFinalFoodItem) => item.mealType === "Lunch"
       );
       const dinnerItems = data.finalMenu.filter(
-        (item: IFinalMenu) => item.mealType === "Dinner"
+        (item: IFinalFoodItem) => item.mealType === "Dinner"
       );
 
       console.log("Breakfast Items:");
@@ -312,15 +324,20 @@ export const viewFinalMenu = async (role: Role) => {
       console.log("Dinner Items:");
       console.table(dinnerItems);
 
-      viewNotification(role);
+      if (fromNotification) {
+        askUserChoiceFromNotification(role, employeeId);
+      } else {
+        requestMenu(role, employeeId);
+      }
+
     } else {
       console.log("No finalized menu available.");
-      viewNotification(role);
+      requestMenu(role, employeeId);
     }
   });
 };
 
-export const giveDetailedFeedback = async (role: Role) => {
+export const giveDetailedFeedback = async (role: Role ,employeeId:number,fromNotification:boolean) => {
   socket.emit("getFeedbackQuestions");
 
   socket.once("feedbackQuestionsResponse", async (data) => {
@@ -347,6 +364,16 @@ export const giveDetailedFeedback = async (role: Role) => {
         (question) => !answeredQuestionIds.includes(question.id)
       );
 
+      if (unansweredQuestions.length === 0) {
+        console.log("You have already given detailed feedback.");
+        if (fromNotification) {
+          askUserChoiceFromNotification(role, employeeId);
+        } else {
+          requestMenu(role, employeeId);
+        }
+        return;
+      }
+
       const answers: IDetailedFeedbackAnswer[] = [];
 
       const askQuestion = async (index: number): Promise<void> => {
@@ -355,9 +382,13 @@ export const giveDetailedFeedback = async (role: Role) => {
           socket.once("storeFeedbackAnswersResponse", (response) => {
             if (response.success) {
               console.log("Feedback answers stored successfully.");
-              requestMenu(role);
-            } else {
-              console.error("Error storing feedback answers:", response.message);
+              if (fromNotification) {
+                askUserChoiceFromNotification(role, employeeId);
+              } else {
+                requestMenu(role, employeeId);
+              }
+            }else {
+              console.error("Error storing feedback answers:", response.message); 
             }
           });
           return;
@@ -380,7 +411,7 @@ export const giveDetailedFeedback = async (role: Role) => {
 };
 
 
-export const updateProfile = async (role: Role) => {
+export const updateProfile = async (role: Role ,employeeId:number) => {
   console.log("Please answer these questions to know your preferences");
 
   rl.question(
@@ -389,7 +420,7 @@ export const updateProfile = async (role: Role) => {
       const preferenceType = preferenceTypeInput.trim().toLowerCase() as DietaryPreference;
       if (!Object.values(DietaryPreference).map(p => p.toLowerCase()).includes(preferenceType)) {
         console.error("Invalid choice. Please select a valid option.");
-        updateProfile(role);
+        updateProfile(role,employeeId);
         return;
       }
 
@@ -397,7 +428,7 @@ export const updateProfile = async (role: Role) => {
         const spiceLevel = spiceLevelInput.trim().toLowerCase() as SpiceLevel;
         if (!Object.values(SpiceLevel).map(s => s.toLowerCase()).includes(spiceLevel)) {
           console.error("Invalid choice. Please select a valid option.");
-          updateProfile(role);
+          updateProfile(role,employeeId);
           return;
         }
 
@@ -405,7 +436,7 @@ export const updateProfile = async (role: Role) => {
           const cuisineType = cuisineTypeInput.trim().toLowerCase() as CuisineType;
           if (!Object.values(CuisineType).map(c => c.toLowerCase()).includes(cuisineType)) {
             console.error("Invalid choice. Please select a valid option.");
-            updateProfile(role);
+            updateProfile(role,employeeId);
             return;
           }
 
@@ -413,7 +444,7 @@ export const updateProfile = async (role: Role) => {
             const sweetTooth = sweetToothInput.trim().toLowerCase();
             if (!["yes", "no"].includes(sweetTooth)) {
               console.error("Invalid choice. Please select a valid option.");
-              updateProfile(role);
+              updateProfile(role,employeeId);
               return;
             }
 
@@ -432,7 +463,7 @@ export const updateProfile = async (role: Role) => {
               } else {
                 console.error("Failed to update profile:", response.message);
               }
-              requestMenu(role);
+              requestMenu(role,employeeId);
             });
           });
         });

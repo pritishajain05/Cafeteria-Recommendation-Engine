@@ -1,9 +1,8 @@
 import { pool } from "../db";
-import { IUser } from "../interface/IUser";
+import { IUser, IUserPreference } from "../interface/IUser";
 import { Role } from "../enum/Role";
 import { RowDataPacket } from "mysql2";
 import { GET_USER_BY_ID, GET_USER_BY_ROLE, SELECT_USER_PREFERENCES, UPDATE_USER_PREFERENCES } from "../utils/constant";
-import { IUserPreference } from "../interface/IUserPreference";
 
 export class UserRepository {
 
@@ -51,7 +50,7 @@ export class UserRepository {
     }
   }
 
-  async getUserPreferences(employeeId: number): Promise<IUserPreference> {
+  async getUserPreference(employeeId: number): Promise<IUserPreference> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(SELECT_USER_PREFERENCES, [employeeId]);
       return rows[0] as IUserPreference; 

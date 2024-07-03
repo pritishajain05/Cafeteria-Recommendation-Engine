@@ -1,3 +1,5 @@
+import { CuisineType, DietaryPreference, SpiceLevel } from "../enum/UserPreferences";
+
 export interface IFoodItem {
   name: string;
   price: number;
@@ -15,26 +17,10 @@ export interface IMenuItem {
   mealType: string;
 }
 
-export interface IRolledOutmenu {
-  id: number;
-  foodItemId: number;
-  foodItemName: string;
-  foodItemPrice: number;
-  votes: number;
-  mealType: string;
-}
-
-export interface IFinalMenu {
-  foodItemId: number;
-  foodItemName: string;
-  mealType: string;
-}
-
-export interface IDiscardFoodItem {
-  id?:number,
-  foodItemId: number,
-  foodItemName: string,
-  averageRating: number,
-  averageSentiment: number,
-  date?: Date
+export interface IFoodItemPreference {
+  foodItemId?: number
+  dietaryPreference: DietaryPreference
+  spiceLevel: SpiceLevel
+  cuisineType: CuisineType;
+  sweetTooth: boolean
 }

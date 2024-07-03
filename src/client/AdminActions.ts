@@ -1,9 +1,8 @@
-import { IFoodItem, IMenuItem } from "../interface/IFoodItem";
+import { IFoodItem, IFoodItemPreference, IMenuItem } from "../interface/IFoodItem";
 import { IFoodCategory } from "../interface/IFoodCategory";
 import { Role } from "../enum/Role";
 import { requestMenu, rl } from "./clientOperation";
 import { socket } from "./client";
-import { IFoodItemPreference } from "../interface/IUserPreference";
 import {
   CuisineType,
   DietaryPreference,
@@ -23,7 +22,7 @@ const getFoodCategories = async (): Promise<IFoodCategory[]> => {
   });
 };
 
-export const addFoodItem = async (role: Role) => {
+export const addFoodItem = async (role: Role , employeeId:number) => {
   const foodItem: IFoodItem = await askFoodItemDetails();
   const foodItemPreference: IFoodItemPreference =
     await askFoodItemPreferences();
@@ -48,11 +47,11 @@ export const addFoodItem = async (role: Role) => {
           } else {
             console.error(response.message);
           }
-          requestMenu(role);
+          requestMenu(role,employeeId);
         });
       } else {
         console.log(response.message);
-        addFoodItem(role);
+        addFoodItem(role,employeeId);
       }
     }
   );
@@ -200,7 +199,7 @@ const askFoodItemPreferences = (): Promise<IFoodItemPreference> => {
   });
 };
 
-export const updateFoodItem = async (role: Role) => {
+export const updateFoodItem = async (role: Role , employeeId:number) => {
   const itemName = await new Promise<string>((resolve) => {
     rl.question("Enter Food Item Name to update: ", (itemName) => {
       resolve(itemName);
@@ -217,7 +216,7 @@ export const updateFoodItem = async (role: Role) => {
         console.log(
           "Food item does not exist.Please enter some other Food Item"
         );
-        updateFoodItem(role);
+        updateFoodItem(role ,employeeId);
         return;
       }
 
@@ -237,10 +236,10 @@ export const updateFoodItem = async (role: Role) => {
         (response: { success: boolean; message: string }) => {
           if (response.success) {
             console.log(`*${response.message}*`);
-            requestMenu(role);
+            requestMenu(role ,employeeId);
           } else {
             console.log(response.message);
-            updateFoodItem(role);
+            updateFoodItem(role,employeeId);
           }
         }
       );
@@ -248,7 +247,7 @@ export const updateFoodItem = async (role: Role) => {
   );
 };
 
-export const deleteFoodItem = async (role: Role) => {
+export const deleteFoodItem = async (role: Role,employeeId:number) => {
   try {
     const itemName = await new Promise<string>((resolve) => {
       rl.question("Enter Food Item Name to delete: ", (itemName) => {
@@ -276,22 +275,22 @@ export const deleteFoodItem = async (role: Role) => {
             } else {
               console.error(response.message);
             }
-            requestMenu(role);
+            requestMenu(role,employeeId);
           });
         } else {
           console.log(response.message);
-          deleteFoodItem(role);
+          deleteFoodItem(role,employeeId);
         }
       }
     );
   } catch (error) {
     console.error("Error in deleting food item:", error);
     console.log("Please try again.");
-    deleteFoodItem(role);
+    deleteFoodItem(role,employeeId);
   }
 };
 
-export const viewMenu = async (role: Role) => {
+export const viewMenu = async (role: Role,employeeId:number) => {
   socket.emit("viewAllFoodItems");
 
   socket.off("viewAllFoodItemsResponse");
@@ -315,10 +314,10 @@ export const viewMenu = async (role: Role) => {
       );
 
       console.table(formattedFoodItems);
-      requestMenu(role);
+      requestMenu(role,employeeId);
     } else {
       console.log("No menu items found.");
-      requestMenu(role);
+      requestMenu(role,employeeId);
     }
   });
 };

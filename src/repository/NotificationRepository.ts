@@ -12,7 +12,7 @@ export class NotificationRepository {
 
   async addNotification(employeeId: number, message: string, isSeen: boolean): Promise<void> {
     try {
-      await pool.execute(ADD_NOTIFICATION, [employeeId, message, this.currentDate, isSeen]);
+      await pool.execute<RowDataPacket[]>(ADD_NOTIFICATION, [employeeId, message, this.currentDate, isSeen]);
     } catch (error) {
       console.error("Error adding notification:", error);
       throw error;
@@ -31,7 +31,7 @@ export class NotificationRepository {
 
   async markNotificationAsSeen(notificationId: number, employeeId: number): Promise<{ success: boolean }> {
     try {
-      const [result] = await pool.execute(MARK_NOTIFICATION_AS_SEEN, [notificationId, employeeId]);
+      const [result] = await pool.execute<RowDataPacket[]>(MARK_NOTIFICATION_AS_SEEN, [notificationId, employeeId]);
       return { success: true };
     } catch (error) {
       console.error("Error marking notification as seen:", error);

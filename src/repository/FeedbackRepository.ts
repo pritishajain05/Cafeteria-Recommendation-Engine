@@ -57,7 +57,7 @@ export class FeedbackRepository {
 
   async addFeedbackOnItem(data: IFeedback): Promise<{ message: string, success: boolean }> {
     try {
-      await pool.execute(ADD_FEEDBACK_ON_ITEM, [
+      await pool.execute<RowDataPacket[]>(ADD_FEEDBACK_ON_ITEM, [
         data.employeeId,
         data.foodItemId,
         data.rating,
@@ -75,7 +75,7 @@ export class FeedbackRepository {
     try {
       await Promise.all(
         questions.map(async (question) => {
-          await pool.execute(ADD_DETAILED_FEEDBACK_QUESTION, [itemName, question, this.currentDate]);
+          await pool.execute<RowDataPacket[]>(ADD_DETAILED_FEEDBACK_QUESTION, [itemName, question, this.currentDate]);
         })
       );
 
@@ -108,9 +108,12 @@ export class FeedbackRepository {
 
   async storeFeedbackAnswers(answers: IDetailedFeedbackAnswer[]): Promise<void> {
     try {
-      const query = STORE_FEEDBACK_ANSWERS;
-      const values = answers.map(answer => [answer.questionId, answer.employeeId, answer.answer, this.currentDate]);
-      await pool.query(query, [values]);
+      await Promise.all(
+      answers.map(async (answer) => 
+        await pool.execute<RowDataPacket[]>(STORE_FEEDBACK_ANSWERS, [answer.questionId, answer.employeeId, answer.answer, this.currentDate])
+      )
+    )
+      
     } catch (error) {
       console.error("Error storing feedback answers:", error);
       throw error;
