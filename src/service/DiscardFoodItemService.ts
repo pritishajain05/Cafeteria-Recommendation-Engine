@@ -12,4 +12,8 @@ export class DiscardFoodItemService {
   async getDiscardFoodItem(): Promise<IDiscardFoodItem[]> {
     return await this.discardFoodItemRepository.getDiscardFoodItem();
   }
+
+  async checkDiscardFoodItemsGenerated() : Promise<boolean> {
+    return await this.discardFoodItemRepository.checkDiscardFoodItemsGenerated();
+  }
 }

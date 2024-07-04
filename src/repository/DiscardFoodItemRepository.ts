@@ -2,6 +2,7 @@ import { RowDataPacket } from "mysql2";
 import { pool } from "../db";
 import {
   ADD_DISCARD_FOOD_ITEM,
+  CHECK_DISCARD_FOOD_ITEMS_GENERATED,
   GET_DISCARD_FOODITEM_BY_DATE,
 } from "../utils/constant";
 import { IDiscardFoodItem } from "../interface/IDiscardFoodItem";
@@ -12,6 +13,7 @@ export class DiscardFoodItemRepository {
   constructor() {
     this.currentDate = new Date().toISOString().split("T")[0];
   }
+
   async addDiscardFoodItem(
     discardFoodItems: IDiscardFoodItem[]
   ): Promise<void> {
@@ -43,5 +45,11 @@ export class DiscardFoodItemRepository {
       console.error("Error adding discard food items:", error);
       throw error;
     }
+  }
+
+  async checkDiscardFoodItemsGenerated() : Promise<boolean> {
+    const [rows] = await pool.execute<RowDataPacket[]>(CHECK_DISCARD_FOOD_ITEMS_GENERATED);
+    return rows[0].count > 0;
+
   }
 }

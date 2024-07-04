@@ -174,7 +174,7 @@ export class RecommendationService {
         const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
         const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
 
-        if (averageRating < 2 && averageSentiment < 0) {
+        if (averageRating > 0.0 && averageRating < 2.0 ) {
           discardFoodItems.push({
             foodItemId: item.id,
             foodItemName: item.name,

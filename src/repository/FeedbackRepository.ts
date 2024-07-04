@@ -71,11 +71,11 @@ export class FeedbackRepository {
     }
   }
 
-  async storeDetailedFeedbackQuestions(itemName: string, questions: string[]): Promise<{ message: string, success: boolean }> {
+  async storeDetailedFeedbackQuestions(itemName: string, questions: string[] , discardFoodItemId:number): Promise<{ message: string, success: boolean }> {
     try {
       await Promise.all(
         questions.map(async (question) => {
-          await pool.execute<RowDataPacket[]>(ADD_DETAILED_FEEDBACK_QUESTION, [itemName, question, this.currentDate]);
+          await pool.execute<RowDataPacket[]>(ADD_DETAILED_FEEDBACK_QUESTION, [itemName, question, this.currentDate , discardFoodItemId]);
         })
       );
 

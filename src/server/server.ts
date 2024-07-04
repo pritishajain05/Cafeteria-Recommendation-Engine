@@ -367,7 +367,10 @@ class Server {
 
       socket.on("getDiscardFooditems", async () => {
         try {
-          await this.recommendationService.getDiscardFoodItem();
+          const alreadyGenerated = await this.discardFoodItemService.checkDiscardFoodItemsGenerated();
+          if (!alreadyGenerated) {
+            await this.recommendationService.getDiscardFoodItem();
+          }
           const discardFoodItems =
             await this.discardFoodItemService.getDiscardFoodItem();
           socket.emit("getDiscardFoodItemResponse", { discardFoodItems });
@@ -403,12 +406,13 @@ class Server {
 
       socket.on(
         "storeFeedbackQuestions",
-        async (itemName: string, questions: string[]) => {
+        async (itemName: string, questions: string[] , discardFoodItemId:number) => {
           try {
             const response =
               await this.feedbackService.storeDetailedFeedbackQuestions(
                 itemName,
-                questions
+                questions,
+                discardFoodItemId
               );
             socket.emit("storeFeedbackQuestionsResponse", {
               success: response.success,

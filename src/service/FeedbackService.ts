@@ -34,11 +34,13 @@ export class FeedbackService {
 
   async storeDetailedFeedbackQuestions(
     itemName: string,
-    questions: string[]
+    questions: string[],
+    discardFoodItemId:number
   ): Promise<{ message: string; success: boolean }> {
     return await this.feedbackRepository.storeDetailedFeedbackQuestions(
       itemName,
-      questions
+      questions,
+      discardFoodItemId
     );
   }
 

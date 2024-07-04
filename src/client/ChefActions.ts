@@ -259,15 +259,26 @@ export const viewDiscardFoodItems = async (role: Role , employeeId:number) => {
           );
         } else if (answer === "2") {
           rl.question(
-            "Enter the name of the food item to get detailed feedback: ",
-            (itemName) => {
+              "Enter the ID of the discarded food item to get detailed feedback: ",
+              (itemId) => {
+                const discardFoodItem = data.discardFoodItems.find(
+                  (item: IDiscardFoodItem) => item.id === parseInt(itemId)
+                );
+  
+                if (!discardFoodItem) {
+                  console.error(`No discarded item found with the ID ${itemId}.`);
+                  return;
+                }
+  
+                const itemName = discardFoodItem.foodItemName;
+
               const questions = [
                 `What didn’t you like about ${itemName}?`,
                 `How would you like ${itemName} to taste?`,
                 `Share your mom’s recipe for ${itemName}.`,
               ];
 
-              socket.emit('storeFeedbackQuestions', itemName, questions);
+              socket.emit('storeFeedbackQuestions', itemName, questions , discardFoodItem.id);
 
               socket.on('storeFeedbackQuestionsResponse', (response) => {
                 if (response.success) {
