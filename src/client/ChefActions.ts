@@ -3,8 +3,8 @@ import { Role } from "../enum/Role";
 import { IDiscardFoodItem } from "../interface/IDiscardFoodItem";
 import { IMenuItem } from "../interface/IFoodItem";
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
-import { socket } from "./client";
-import { requestMenu, rl } from "./clientOperation";
+import { requestMenu, socket } from "./client";
+import { promptActionAfterViewingDiscardItems, promptDiscardedItemIdForFeedback, promptFoodItemIdsForRollOutMenu, promptFoodItemNameToRemove } from "./promptFunctions";
 
 export const viewRecommendedFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("viewRecommendedFoodItems");
@@ -43,21 +43,7 @@ export const viewRecommendedFoodItems = async (role: Role , employeeId:number) =
   });
 };
 
-const promptUserForIds = (mealType: string) => {
-  return new Promise<number[]>((resolve) => {
-    rl.question(
-      `Enter the IDs of ${mealType} items (comma-separated): `,
-      (answer) => {
-        const selectedItemIds = (answer as string)
-          .split(",")
-          .map((id) => parseInt(id.trim()))
-          .filter((id) => !isNaN(id));
 
-        resolve(selectedItemIds);
-      }
-    );
-  });
-};
 
 export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => {
   socket.emit("checkRolledOutMenu");
@@ -91,7 +77,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.table(breakfastItems);
           console.log("\n \n Recommended Breakfast Items:");
           console.table(data.topBreakfastItems);
-          const selectedBreakfastIds = await promptUserForIds("Breakfast");
+          const selectedBreakfastIds = await promptFoodItemIdsForRollOutMenu("Breakfast");
 
           const lunchItems = formattedFoodItems.filter((item) =>
             item.mealType.includes(MealType[MealType.Lunch])
@@ -100,7 +86,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.table(lunchItems);
           console.log("\n \n Recommended Lunch Items:");
           console.table(data.topLunchItems);
-          const selectedLunchIds = await promptUserForIds("Lunch");
+          const selectedLunchIds = await promptFoodItemIdsForRollOutMenu("Lunch");
 
           const dinnerItems = formattedFoodItems.filter((item) =>
             item.mealType.includes(MealType[MealType.Dinner])
@@ -109,7 +95,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.table(dinnerItems);
           console.log(" \n \n Recommended Dinner Items:");
           console.table(data.topDinnerItems);
-          const selectedDinnerIds = await promptUserForIds("Dinner");
+          const selectedDinnerIds = await promptFoodItemIdsForRollOutMenu("Dinner");
 
           const selectedIds = [
             ...selectedBreakfastIds,
@@ -221,97 +207,5 @@ const findTopVotedItem = (
     .slice(0, 2);
 };
 
-export const viewDiscardFoodItems = async (role: Role , employeeId:number) => {
-  socket.emit("getDiscardFooditems");
-  socket.off("getDiscardFoodItemResponse");
-  socket.on("getDiscardFoodItemResponse", (data) => {
-  
-    if (data.error) {
-      console.error("Error fetching discard menu items:", data.error);
-      return;
-    }
 
-    console.log("Discard Menu Item List:");
-    console.table(
-      data.discardFoodItems.map((item: IDiscardFoodItem) => {
-        const { date, ...rest } = item;
-        return { ...rest, date: date ? new Date(date).toLocaleDateString() : "N/A" };
-      })
-    );
 
-    rl.question(
-      `Would you like to \n (1) Remove an item or \n (2) Get detailed feedback? or \n exit to return to main Menu `,
-      async (answer) => {
-        if (answer === "1") {
-          rl.question(
-            "Enter the name of the food item to remove from the menu: ",
-            (itemName) => {
-              socket.emit("deleteFoodItem", itemName);
-              socket.off("deleteFoodItemResponse");
-              socket.on("deleteFoodItemResponse", (response) => {
-                if (response.success) {
-                  console.log(response.message);
-                } else {
-                  console.error(response.message);
-                }
-              });
-            }
-          );
-        } else if (answer === "2") {
-          rl.question(
-              "Enter the ID of the discarded food item to get detailed feedback: ",
-              (itemId) => {
-                const discardFoodItem = data.discardFoodItems.find(
-                  (item: IDiscardFoodItem) => item.id === parseInt(itemId)
-                );
-  
-                if (!discardFoodItem) {
-                  console.error(`No discarded item found with the ID ${itemId}.`);
-                  return;
-                }
-  
-                const itemName = discardFoodItem.foodItemName;
-
-              const questions = [
-                `What didn’t you like about ${itemName}?`,
-                `How would you like ${itemName} to taste?`,
-                `Share your mom’s recipe for ${itemName}.`,
-              ];
-
-              socket.emit('storeFeedbackQuestions', itemName, questions , discardFoodItem.id);
-
-              socket.on('storeFeedbackQuestionsResponse', (response) => {
-                if (response.success) {
-                  console.log(`Questions stored successfully for ${itemName}.`);
-                } else {
-                  console.error(`Failed to store questions: ${response.message}`);
-                }
-              });
-
-              const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
-              Press 3 --> Give Detailed Feedback`;
-              socket.emit("sendNotificationToEmployees", message, false);
-              socket.off("employeeNotificationResponse");
-              socket.on("employeeNotificationResponse", (response) => {
-                if (response.success) {
-                  console.log(
-                    `Notification sent to employees to provide feedback on ${itemName}.`
-                  );
-                  requestMenu(role,employeeId);
-                } else {
-                  console.error(
-                    `Failed to send notification: ${response.message}`
-                  );
-                }
-              });
-            }
-          );
-        } else if (answer === "exit") {
-          requestMenu(role,employeeId);
-        } else {
-          console.log("Invalid choice. Please enter 1 or 2.");
-        }
-      }
-    );
-  });
-};

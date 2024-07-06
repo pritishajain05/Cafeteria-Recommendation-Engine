@@ -1,5 +1,5 @@
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
-import { RolledOutFoodItemRepository } from "../repository/RolledOutFooditemReposiotry";
+import { RolledOutFoodItemRepository } from "../repository/RolledOutFoodItemReposiotry";
 
 export class RolledOutFoodItemService {
   private rolledOutFoodItemRepository = new RolledOutFoodItemRepository();

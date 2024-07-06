@@ -2,25 +2,21 @@ import {
   addFoodItem,
   deleteFoodItem,
   updateFoodItem,
-  viewMenu,
 } from "./AdminActions";
 import { Role } from "../enum/Role";
-import { socket } from "./client";
-import { requestMenu, rl } from "./clientOperation";
+import { requestMenu, socket } from "./client";
 import {
   finalizeFoodItemsForNextDay,
   rollOutMenuForNextDay,
-  viewDiscardFoodItems,
 } from "./ChefActions";
 import {
   giveDetailedFeedback,
   giveFeedbackOnItem,
   updateProfile,
-  viewFeedbackOnItem,
   viewFinalMenu,
-  viewNotification,
   voteForFoodItemsForNextDay,
 } from "./EmployeeActions";
+import { viewDiscardFoodItems, viewFeedbackOnItem, viewMenu, viewNotification } from "./CommonActions";
 
 export const handleAdminOption = async (option: string, role: Role , employeeId:number) => {
   switch (option) {
@@ -43,7 +39,6 @@ export const handleAdminOption = async (option: string, role: Role , employeeId:
       await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
-      rl.close();
       socket.close();
       console.log("Logged out successfully.");
       break;
@@ -74,7 +69,6 @@ export const handleChefOption = async (option: string, role: Role , employeeId:n
       await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
-      rl.close();
       socket.close();
       console.log("Logged out successfully.");
       break;
@@ -111,7 +105,6 @@ export const handleEmployeeOption = async (option: string, role: Role , employee
       await updateProfile(role,employeeId);
       break;
     case "logout":
-      rl.close();
       socket.close();
       console.log("Logged out successfully.");
       break;
