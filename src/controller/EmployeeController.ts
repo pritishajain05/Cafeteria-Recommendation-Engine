@@ -26,15 +26,6 @@ export class EmployeeController {
     this.foodItemService = new FoodItemService();
     this.notificationService = new NotificationService();
 
-    // this.voteForItems = this.voteForItems.bind(this);
-    // this.addFeedbackOnItem = this.addFeedbackOnItem.bind(this);
-    // this.getFinalizedMenu = this.getFinalizedMenu.bind(this);
-    // this.updateUserPreferences = this.updateUserPreferences.bind(this);
-    // this.getFeedbackQuestions = this.getFeedbackQuestions.bind(this);
-    // this.getEmployeeFeedbackAnswers = this.getEmployeeFeedbackAnswers.bind(this);
-    // this.storeFeedbackAnswers = this.storeFeedbackAnswers.bind(this);
-    // this.getUserPreferences = this.getUserPreferences.bind(this);
-    // this.getFoodItemPreferences = this.getFoodItemPreferences.bind(this);
   }
 
   public initializeEmployeeHandlers(socket: Socket) {

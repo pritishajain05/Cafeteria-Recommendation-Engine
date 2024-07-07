@@ -19,12 +19,6 @@ export class ChefController {
     this.finalFoodItemService = new FinalFoodItemService();
     this.discardFoodItemService = new DiscardFoodItemService();
     this.feedbackService = new FeedbackService();
-
-    // this.getRolledOutMenu = this.getRolledOutMenu.bind(this);
-    // this.viewRecommendedFoodItems = this.viewRecommendedFoodItems.bind(this);
-    // this.storeSelectedIds = this.storeSelectedIds.bind(this);
-    // this.checkRolledOutMenu = this.checkRolledOutMenu.bind(this);
-    // this.storeFinalizedItems = this.storeFinalizedItems.bind(this);
   }
 
   public initializeChefHandlers(socket: Socket) {

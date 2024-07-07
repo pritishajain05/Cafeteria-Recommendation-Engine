@@ -14,14 +14,6 @@ export class AdminController {
     this.foodItemService = new FoodItemService();
     this.feedbackService = new FeedbackService();
     this.notificationService = new NotificationService();
-
-    // this.addFoodItem = this.addFoodItem.bind(this);
-    // this.updateFoodItem = this.updateFoodItem.bind(this);
-    // this.deleteFoodItem = this.deleteFoodItem.bind(this);
-    // this.getFoodCategories = this.getFoodCategories.bind(this);
-    // this.checkFoodItemExistence = this.checkFoodItemExistence.bind(this);
-    // this.viewAllFoodItems = this.viewAllFoodItems.bind(this);
-    // this.getFeedbackOnItem = this.getFeedbackOnItem.bind(this);
   }
 
   public initializeAdminHandlers(socket: Socket) {
