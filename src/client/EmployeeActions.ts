@@ -1,11 +1,9 @@
 import { Role } from "../enum/Role";
 import { requestMenu, socket } from "./client";
-import { INotification } from "../interface/INotification";
 import {
   IDetailedFeedbackAnswer,
   IDetailedFeedbackQuestion,
 } from "../interface/IFeedback";
-import { IFeedback } from "./../interface/IFeedback";
 import { IUserPreference } from "../interface/IUser";
 import { IFoodItemPreference } from "../interface/IFoodItem";
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
@@ -14,7 +12,6 @@ import {
   promptDetailedFeedbackAnswers,
   promptEmployeeToVoteForItems,
   promptFeedbackDetails,
-  promptFeedbackItemId,
   promptFoodItemPreferences,
   promptUserChoiceFromNotification,
 } from "./promptFunctions";

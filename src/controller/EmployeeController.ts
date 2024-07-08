@@ -7,6 +7,8 @@ import { FoodItemService } from "../service/FoodItemService";
 import { IDetailedFeedbackAnswer, IFeedback } from "../interface/IFeedback";
 import { IUserPreference } from "../interface/IUser";
 import { NotificationService } from "../service/NotificationService";
+import { UserActivityService } from "../service/UserActivityService";
+import { UserAction } from "../enum/UserAction";
 
 export class EmployeeController {
   private rolledOutFoodItemService: RolledOutFoodItemService;
@@ -15,9 +17,11 @@ export class EmployeeController {
   private userService: UserService;
   private foodItemService: FoodItemService;
   private notificationService: NotificationService;
+  private userActivityService: UserActivityService;
+  private socketEmployeeIdMapping: { [socketId: string]: number };
 
   constructor(
-    io: Server
+    io: Server , socketEmployeeIdMapping: { [socketId: string]: number }
   ) {
     this.rolledOutFoodItemService = new RolledOutFoodItemService();
     this.feedbackService = new FeedbackService();
@@ -25,6 +29,8 @@ export class EmployeeController {
     this.userService = new UserService();
     this.foodItemService = new FoodItemService();
     this.notificationService = new NotificationService();
+    this.userActivityService = new UserActivityService(); 
+    this.socketEmployeeIdMapping = socketEmployeeIdMapping;
 
   }
 
@@ -50,8 +56,8 @@ export class EmployeeController {
         success: true,
         message: response.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VOTE_FOR_FOOD_ITEM);
     } catch (error) {
-      console.error("Error storing selected IDs:", error);
       socket.emit("voteForItemsResponse", {
         success: false,
         message: "Failed to vote",
@@ -66,8 +72,8 @@ export class EmployeeController {
         success: result.success,
         message: result.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.GIVE_FEEDBACK);
     } catch (error) {
-      console.log("Error in adding feedback", error);
       socket.emit("addFeedbackresponse", {
         success: false,
         message: error,
@@ -79,6 +85,7 @@ export class EmployeeController {
     try {
       const finalMenu = await this.finalFoodItemService.getFinalFoodItem();
       socket.emit("finalizedMenuResponse", { finalMenu });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_FINAL_MENU );
     } catch (error) {
       socket.emit("finalizedMenuResponse", { error });
     }
@@ -91,8 +98,8 @@ export class EmployeeController {
         success: response.success,
         message: response.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.UPDATE_USER_PROFILE);
     } catch (error) {
-      console.log(error);
       socket.emit("updateUserPreferencesResponse", {
         success: false,
         message: error,
@@ -105,7 +112,6 @@ export class EmployeeController {
       const questions = await this.feedbackService.getFeedbackQuestions();
       socket.emit("feedbackQuestionsResponse", { questions });
     } catch (error) {
-      console.error("Error fetching feedback questions:", error);
       socket.emit("feedbackQuestionsResponse", { error });
     }
   }
@@ -115,7 +121,6 @@ export class EmployeeController {
       const answers = await this.feedbackService.getEmployeeFeedbackAnswers(employeeId);
       socket.emit("employeeFeedbackAnswersResponse", { answers });
     } catch (error) {
-      console.error("Error fetching employee feedback answers:", error);
       socket.emit("employeeFeedbackAnswersResponse", { error });
     }
   }
@@ -127,8 +132,8 @@ export class EmployeeController {
         success: true,
         message: "Feedback answers stored successfully.",
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.GIVE_DETAILED_FEEDBACK);
     } catch (error) {
-      console.error("Error storing feedback answers:", error);
       socket.emit("storeFeedbackAnswersResponse", {
         success: false,
         message: error,
@@ -184,6 +189,7 @@ export class EmployeeController {
       socket.emit("getNotificationsResponse", {
         notifications: notifications,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_NOTIFICATION);
     } catch (error) {
       socket.emit("getNotificationsResponse", {
         error: "Failed to fetch notifications",

@@ -37,9 +37,7 @@ export class DiscardFoodItemRepository {
 
   async getDiscardFoodItem(): Promise<IDiscardFoodItem[]> {
     try {
-      const [rows] = await pool.execute<RowDataPacket[]>(GET_DISCARD_FOODITEM_BY_DATE, [
-        this.currentDate,
-      ]);
+      const [rows] = await pool.execute<RowDataPacket[]>(GET_DISCARD_FOODITEM_BY_DATE);
       return rows as IDiscardFoodItem[];
     } catch (error) {
       console.error("Error adding discard food items:", error);

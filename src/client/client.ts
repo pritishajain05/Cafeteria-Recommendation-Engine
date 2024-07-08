@@ -1,5 +1,4 @@
 import { io, Socket } from "socket.io-client";
-import readline from "readline";
 import { Role } from "../enum/Role";
 import {
   handleMenuOptionSelection,
@@ -16,10 +15,10 @@ export class Client {
   }
 
   private initialize(): void {
-    this.socket.on("connect", this.onConnect.bind(this));
-    this.socket.on("loginResponse", this.onLoginResponse.bind(this));
-    this.socket.on("menuResponse", this.onMenuResponse.bind(this));
-    this.socket.on("disconnect", this.onDisconnect.bind(this));
+    this.socket.on("connect",()=> this.onConnect());
+    this.socket.on("loginResponse",(data:any)=>this.onLoginResponse(data));
+    this.socket.on("menuResponse", (data:any)=> this.onMenuResponse(data));
+    this.socket.on("disconnect", () => this.onDisconnect());
   }
 
   private async onConnect(): Promise<void> {
@@ -34,6 +33,7 @@ export class Client {
       this.onConnect(); 
     } else {
       console.log(`Logged in as ${data.role}`);
+      this.socket.emit("setEmployeeId", data.employeeId);
       this.requestMenu(data.role, data.employeeId);
     }
   }
@@ -50,10 +50,10 @@ export class Client {
       handleMenuOptionSelection(data.role, data.employeeId);
     }
   }
-
   
   private onDisconnect(): void {
     console.log("Connection closed");
+    process.exit(0);
   }
 
   public requestMenu(role: Role, employeeId: number): void {

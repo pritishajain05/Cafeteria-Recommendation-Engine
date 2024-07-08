@@ -110,7 +110,7 @@ export const FIND_ROLLED_OUT_FOOD_ITEM_ID: string = `SELECT id FROM rolloutFoodI
 
 export const IS_ITEM_IN_FINAL_MENU: string = `"SELECT * FROM finalFoodItem WHERE rolloutFoodItemId = ? AND date = ? "`;
 
-export const GET_DISCARD_FOODITEM_BY_DATE: string = `SELECT * FROM discardFoodItem WHERE date = ?`;
+export const GET_DISCARD_FOODITEM_BY_DATE: string = `SELECT * FROM discardFoodItem`;
 
 export const ADD_DETAILED_FEEDBACK_QUESTION: string = `
   INSERT INTO detailedFeedbackQuestion (foodItemName, question, date,discardFoodItemId)
@@ -137,6 +137,8 @@ export const SELECT_ALL_FOOD_ITEM_PREFERENCES:string = `
 `;
 
 export const CHECK_DISCARD_FOOD_ITEMS_GENERATED:string = `SELECT COUNT(*) as count FROM discardFoodItem WHERE YEAR(date) = YEAR(CURRENT_DATE) AND MONTH(date) = MONTH(CURRENT_DATE)`;
+
+export const RECORD_USER_ACTIVITY:string = `INSERT INTO userActivity (employeeid, action) VALUES (?, ?)`
 
 
 export const positiveWords: string[] = [

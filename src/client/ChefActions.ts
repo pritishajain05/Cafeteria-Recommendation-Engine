@@ -1,10 +1,9 @@
 import { MealType } from "../enum/MealType";
 import { Role } from "../enum/Role";
-import { IDiscardFoodItem } from "../interface/IDiscardFoodItem";
 import { IMenuItem } from "../interface/IFoodItem";
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { requestMenu, socket } from "./client";
-import { promptActionAfterViewingDiscardItems, promptDiscardedItemIdForFeedback, promptFoodItemIdsForRollOutMenu, promptFoodItemNameToRemove } from "./promptFunctions";
+import { promptFoodItemIdsForRollOutMenu } from "./promptFunctions";
 
 export const viewRecommendedFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("viewRecommendedFoodItems");

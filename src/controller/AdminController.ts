@@ -3,17 +3,22 @@ import { FoodItemService } from "../service/FoodItemService";
 import { FeedbackService } from "../service/FeedbackService";
 import { IFoodItem, IFoodItemPreference } from "../interface/IFoodItem";
 import { NotificationService } from './../service/NotificationService';
-import { ChefController } from "./ChefController";
+import { UserActivityService } from './../service/UserActivityService';
+import { UserAction } from "../enum/UserAction";
 
 export class AdminController {
   private foodItemService: FoodItemService;
   private feedbackService: FeedbackService;
   private notificationService: NotificationService;
+  private userActivityService: UserActivityService;
+  private socketEmployeeIdMapping: { [socketId: string]: number };
 
-  constructor(io: Server){
+  constructor(io: Server , socketEmployeeIdMapping: { [socketId: string]: number }){
     this.foodItemService = new FoodItemService();
     this.feedbackService = new FeedbackService();
     this.notificationService = new NotificationService();
+    this.userActivityService = new UserActivityService();
+    this.socketEmployeeIdMapping = socketEmployeeIdMapping;
   }
 
   public initializeAdminHandlers(socket: Socket) {
@@ -23,7 +28,7 @@ export class AdminController {
     socket.on("getFoodCategories", () => this.getFoodCategories(socket));
     socket.on("checkFoodItemExistence", (itemName) => this.checkFoodItemExistence(socket, itemName));
     socket.on("viewAllFoodItems", () => this.viewAllFoodItems(socket));
-    socket.on("getFeedbackOnItem", (id) => this.getFeedbackOnItem(id,socket));
+    socket.on("viewFeedbackOnItem", (id) => this.viewFeedbackOnItem(id,socket));
     socket.on("sendNotificationToChefAndEmployee", (message,isSeen) => this.sendNotificationToChefAndEmployee(socket,message,isSeen));
   }
 
@@ -31,9 +36,10 @@ export class AdminController {
     try {
       const result = await this.foodItemService.addFoodItem(foodItem, foodItemPreference);
       socket.emit("addFoodItemResponse", { success: result.success, message: result.message });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.ADD_FOOD_ITEM);
     } catch (error) {
       socket.emit("addFoodItemResponse", { success: false, message: `Failed to add food item: ${error}` });
-    }
+    }[]
   }
 
   private async updateFoodItem(socket: Socket, itemName: string, newFoodItem: IFoodItem, newFoodItemPreference: IFoodItemPreference) {
@@ -47,6 +53,7 @@ export class AdminController {
         success: result.success,
         message: result.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.UPDATE_FOOD_ITEM);
     } catch (error) {
       socket.emit("updateFoodItemResponse", {
         success: false,
@@ -62,6 +69,7 @@ export class AdminController {
         success: result.success,
         message: result.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.DELETE_FOOD_ITEM);
     } catch (error) {
       socket.emit("deleteFoodItemResponse", { success: false, message: `Failed to delete food item: ${error}` });
     }
@@ -89,8 +97,8 @@ export class AdminController {
     try {
       const foodItems = await this.foodItemService.getAllFoodItem();
       socket.emit("viewAllFoodItemsResponse", { foodItems });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_MENU);
     } catch (error) {
-      console.error("Error fetching menu:", error);
       socket.emit("viewAllFoodItemsResponse", {
         error: "Failed to fetch food Items",
       });
@@ -98,14 +106,14 @@ export class AdminController {
   }
 
   
-  private async getFeedbackOnItem (id: number,socket:Socket) {
+  private async viewFeedbackOnItem (id: number,socket:Socket) {
     try {
       const feedback = await this.feedbackService.getFeedbackByFoodItemId(
         id
       );
       socket.emit("feedbackresponse", { feedback });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_FEEDBACK)
     } catch (error) {
-      console.log("Error in getting feedback", error);
       socket.emit("feedbackResponse", { error });
     }
   }

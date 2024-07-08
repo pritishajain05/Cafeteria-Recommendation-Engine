@@ -4,7 +4,6 @@ import {
   IFeedback,
 } from "../interface/IFeedback";
 import { FeedbackRepository } from "../repository/FeedbackRepository";
-import { FoodItemRepository } from "./../repository/FoodItemRepository";
 
 export class FeedbackService {
   private feedbackRepository = new FeedbackRepository();

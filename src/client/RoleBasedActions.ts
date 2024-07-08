@@ -16,7 +16,7 @@ import {
   viewFinalMenu,
   voteForFoodItemsForNextDay,
 } from "./EmployeeActions";
-import { viewDiscardFoodItems, viewFeedbackOnItem, viewMenu, viewNotification } from "./CommonActions";
+import { handleLogout, viewDiscardFoodItems, viewFeedbackOnItem, viewMenu, viewNotification } from "./CommonActions";
 
 export const handleAdminOption = async (option: string, role: Role , employeeId:number) => {
   switch (option) {
@@ -39,8 +39,7 @@ export const handleAdminOption = async (option: string, role: Role , employeeId:
       await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
-      socket.close();
-      console.log("Logged out successfully.");
+      await handleLogout(role,employeeId);
       break;
     default:
       console.log("Invalid option.");
@@ -69,8 +68,7 @@ export const handleChefOption = async (option: string, role: Role , employeeId:n
       await viewDiscardFoodItems(role,employeeId);
       break;
     case "logout":
-      socket.close();
-      console.log("Logged out successfully.");
+      await handleLogout(role,employeeId);
       break;
     default:
       console.log("Invalid option.");
@@ -105,8 +103,7 @@ export const handleEmployeeOption = async (option: string, role: Role , employee
       await updateProfile(role,employeeId);
       break;
     case "logout":
-      socket.close();
-      console.log("Logged out successfully.");
+      await handleLogout(role,employeeId);
       break;
     default:
       console.log("Invalid option.");

@@ -5,6 +5,8 @@ import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { FinalFoodItemService } from './../service/FinalFoodItemService';
 import { DiscardFoodItemService } from './../service/DiscardFoodItemService';
 import { FeedbackService } from './../service/FeedbackService';
+import { UserActivityService } from "../service/UserActivityService";
+import { UserAction } from "../enum/UserAction";
 
 export class ChefController {
   private recommendationService: RecommendationService;
@@ -12,13 +14,18 @@ export class ChefController {
   private finalFoodItemService: FinalFoodItemService;
   private discardFoodItemService: DiscardFoodItemService;
   private feedbackService:FeedbackService;
+  private userActivityService: UserActivityService;
+  private socketEmployeeIdMapping: { [socketId: string]: number }
 
-  constructor(io: Server){
+
+  constructor(io: Server , socketEmployeeIdMapping: { [socketId: string]: number }){
     this.recommendationService = new RecommendationService();
     this.rolledOutFoodItemService = new RolledOutFoodItemService();
     this.finalFoodItemService = new FinalFoodItemService();
     this.discardFoodItemService = new DiscardFoodItemService();
     this.feedbackService = new FeedbackService();
+    this.userActivityService = new UserActivityService();
+    this.socketEmployeeIdMapping = socketEmployeeIdMapping;
   }
 
   public initializeChefHandlers(socket: Socket) {
@@ -39,8 +46,8 @@ export class ChefController {
         topLunchItems,
         topDinnerItems,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_RECOMMENDED_FOOD_ITEM);
     } catch (error) {
-      console.error("Error generating recommendations:", error);
       socket.emit("recommendedFoodItemsResponse", {
         error: "Failed to fetch recommended items",
       });
@@ -54,8 +61,8 @@ export class ChefController {
         success: true,
         message: response.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.ROLLED_OUT_ITEM);
     } catch (error) {
-      console.error("Error storing selected IDs:", error);
       socket.emit("storeSelectedIdsResponse", {
         success: false,
         message: "Failed to store selected IDs.",
@@ -68,7 +75,6 @@ export class ChefController {
       const menuRolledOut = await this.rolledOutFoodItemService.checkRolledOutMenu();
       socket.emit("checkRolledOutMenuResponse", { menuRolledOut });
     } catch (error) {
-      console.error("Error checking rolled out menu:", error);
       socket.emit("checkRolledOutMenuResponse", {
         error: "Error checking rolled out menu",
       });
@@ -82,8 +88,8 @@ export class ChefController {
         success: result.success,
         message: result.message,
       });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.FINALIZE_FOOD_ITEM);
     } catch (error) {
-      console.log("Error in storing final menu", error);
       socket.emit("storeFinalizedItemsResponse", {
         success: false,
         message: error,
@@ -97,7 +103,6 @@ export class ChefController {
         await this.recommendationService.getRolledOutItemsWithFeedback();
       socket.emit("rolledOutMenuResponse", { rolledOutMenu });
     } catch (error) {
-      console.log("Error in rolling out menu", error);
       socket.emit("rolledOutMenuResponse", { error });
     }
   }
@@ -111,8 +116,8 @@ export class ChefController {
       const discardFoodItems =
         await this.discardFoodItemService.getDiscardFoodItem();
       socket.emit("getDiscardFoodItemResponse", { discardFoodItems });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.VIEW_DISCARD_FOOD_ITEM);
     } catch (error) {
-      console.error("Error generating discard items", error);
       socket.emit("getDiscardFoodItemResponse", {
         error: "error generating discard items",
       });
@@ -133,7 +138,6 @@ export class ChefController {
           message: response.message,
         });
       } catch (error) {
-        console.error(`Failed to store questions: ${error}`);
         socket.emit("storeFeedbackQuestionsResponse", {
           success: false,
           message: error,
