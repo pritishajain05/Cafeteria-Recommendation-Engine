@@ -8,7 +8,7 @@ export const GET_ALL_FOOD_CATEGORIES: string = `Select * from foodCategory`;
 export const ADD_FOOD_ITEM = ` INSERT INTO foodItem (name, price, availabilityStatus, foodCategoryId, mealTypeId)
       VALUES (?, ?, ?, ?,?)`;
 
-export const ADD_FOOD_ITEM_PREFERENCE : string= `INSERT INTO FoodItemPreference (foodItemId, dietaryPreference, spiceLevel, cuisineType, sweetTooth) VALUES (?, ?, ?, ?, ?)`;
+export const ADD_FOOD_ITEM_PREFERENCE: string = `INSERT INTO FoodItemPreference (foodItemId, dietaryPreference, spiceLevel, cuisineType, sweetTooth) VALUES (?, ?, ?, ?, ?)`;
 
 export const ADD_FOOD_ITEM_MEAL_TYPE: string = `INSERT INTO foodItemMealType (foodItemId, mealTypeId)
       VALUES (?, ?)`;
@@ -22,9 +22,9 @@ export const CHECK_FOOD_ITEM_EXISTENCE: string = `SELECT * FROM foodItem WHERE L
 export const UPDATE_FOOD_ITEM: string =
   "UPDATE foodItem SET name = ?, price = ?, availabilityStatus = ?,foodCategoryId = ? ,mealTypeid = ? WHERE name = ?";
 
- export const  UPDATE_FOOD_ITEM_PREFERENCE: string = `UPDATE FoodItemPreference
+export const UPDATE_FOOD_ITEM_PREFERENCE: string = `UPDATE FoodItemPreference
   SET dietaryPreference = ?, spiceLevel = ?, cuisineType = ?, sweetTooth = ?
-  WHERE foodItemId = ?;`
+  WHERE foodItemId = ?;`;
 
 export const UPDATE_USER_PREFERENCES: string = ` INSERT INTO userProfile (employeeId, dietaryPreference, spiceLevel, cuisineType, sweetTooth)
   VALUES (?, ?, ?, ?, ?)
@@ -132,14 +132,19 @@ export const SELECT_USER_PREFERENCES: string = `
   WHERE employeeId = ?
 `;
 
-export const SELECT_ALL_FOOD_ITEM_PREFERENCES:string = `
+export const SELECT_ALL_FOOD_ITEM_PREFERENCES: string = `
   SELECT * FROM FoodItemPreference
 `;
 
-export const CHECK_DISCARD_FOOD_ITEMS_GENERATED:string = `SELECT COUNT(*) as count FROM discardFoodItem WHERE YEAR(date) = YEAR(CURRENT_DATE) AND MONTH(date) = MONTH(CURRENT_DATE)`;
+export const CHECK_DISCARD_FOOD_ITEMS_GENERATED: string = `SELECT COUNT(*) as count FROM discardFoodItem WHERE YEAR(date) = YEAR(CURRENT_DATE) AND MONTH(date) = MONTH(CURRENT_DATE)`;
 
-export const RECORD_USER_ACTIVITY:string = `INSERT INTO userActivity (employeeid, action) VALUES (?, ?)`
+export const RECORD_USER_ACTIVITY: string = `INSERT INTO userActivity (employeeid, action) VALUES (?, ?)`;
 
+export const CHECK_USER_VOTED_TODAY: string = `
+    SELECT id 
+    FROM userActivity 
+    WHERE employeeid = ? AND action = ? AND timestamp >= ?
+`;
 
 export const positiveWords: string[] = [
   "good",

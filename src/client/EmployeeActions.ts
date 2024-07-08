@@ -109,6 +109,19 @@ export const voteForFoodItemsForNextDay = async (
   employeeId: number,
   fromNotification: boolean
 ) => {
+
+  socket.emit("checkUserVotedToday", employeeId);
+  socket.once("checkUserVotedTodayResponse", async (data) => {
+    if (data.hasVoted) {
+      console.error("You have already voted today.");
+      if (fromNotification) {
+        promptUserChoiceFromNotification(role, employeeId);
+      } else {
+        requestMenu(role, employeeId);
+      }
+      return;
+    }
+
   socket.emit("getRolledOutMenu");
 
   socket.off("rolledOutMenuResponse");
@@ -119,6 +132,12 @@ export const voteForFoodItemsForNextDay = async (
     }
 
     const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
+
+    if(rolledOutMenu.length === 0){
+      console.log("Menu has not been rolled out till now!");
+      requestMenu(role,employeeId);
+      return;
+    }
 
     const userPreferences = await getUserPreferences(employeeId);
     const foodPreferences = await getFoodItemPreferences();
@@ -181,8 +200,7 @@ export const voteForFoodItemsForNextDay = async (
     ];
 
     socket.emit("voteForItems", votedIds);
-    socket.off("voteForItemsResponse");
-    socket.on("voteForItemsResponse", (response) => {
+    socket.once("voteForItemsResponse", (response) => {
       if (response.success) {
         console.log("Voted successfully:", response.message);
         if (fromNotification) {
@@ -200,6 +218,7 @@ export const voteForFoodItemsForNextDay = async (
       }
     });
   });
+})
 };
 
 

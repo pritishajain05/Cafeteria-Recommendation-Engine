@@ -47,6 +47,7 @@ export class EmployeeController {
     socket.on("sendNotificationToEmployees",(message,isSeen) =>this.sendNotificationToEmployees(socket,message,isSeen));
     socket.on("getNotifications",(employeeId)=>this.getNotifications(socket,employeeId));
     socket.on("markNotificationAsSeen",(notificationId:number,employeeId:number)=> this.markNotificationAsSeen(socket,notificationId,employeeId));
+    socket.on("checkUserVotedToday" ,(employeeId:number)=> this.checkUserVotedToday(socket,employeeId));
   }
 
   private async voteForItems(socket: Socket, selectedIds: number[]) {
@@ -211,5 +212,15 @@ export class EmployeeController {
         socket.emit("markNotificationAsSeenResponse", { success: false });
       }
     }
+
+    private async checkUserVotedToday (socket:Socket ,employeeId:number) {
+      try {
+        const hasVoted = await this.userActivityService.hasUserVotedToday(employeeId);
+        socket.emit("checkUserVotedTodayResponse", { hasVoted });
+      } catch (error) {
+        socket.emit("checkUserVotedTodayResponse", { error: "Error checking voting activity" });
+      }
+    }
+
   
 }
