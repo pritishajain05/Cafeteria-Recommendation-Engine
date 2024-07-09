@@ -16,4 +16,8 @@ export class DiscardFoodItemService {
   async checkDiscardFoodItemsGenerated() : Promise<boolean> {
     return await this.discardFoodItemRepository.checkDiscardFoodItemsGenerated();
   }
+
+  async deleteDiscardFoodItem(itemName:string) : Promise<{ message: string; success: boolean }> {
+    return await this.discardFoodItemRepository.deleteDiscardFoodItem(itemName);
+  }
 }

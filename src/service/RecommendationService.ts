@@ -168,13 +168,17 @@ export class RecommendationService {
   async getDiscardFoodItem(): Promise<void> {
     try {
       const discardFoodItems: IDiscardFoodItem[] = [];
-
+  
       this.foodItems.forEach(item => {
+        if (!item.availabilityStatus) {
+          return;
+        }
+  
         const feedback = this.calculateFeedbackMap().get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
         const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
         const averageSentiment = feedback.count ? feedback.totalSentiment / feedback.count : 0;
-
-        if (averageRating > 0.0 && averageRating < 2.0 ) {
+  
+        if (averageRating > 0.0 && averageRating < 2.0) {
           discardFoodItems.push({
             foodItemId: item.id,
             foodItemName: item.name,
@@ -183,10 +187,12 @@ export class RecommendationService {
           });
         }
       });
+  
       await this.discardFoodItemService.addDiscardFoodItem(discardFoodItems);
     } catch (error) {
       console.error("Error fetching discard food items:", error);
       throw error;
     }
   }
+
 }

@@ -90,8 +90,8 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 
     if (actionChoice === "1") {
       const itemName = await promptFoodItemNameToRemove();
-      socket.emit("deleteFoodItem", itemName);
-      socket.once("deleteFoodItemResponse", (response) => {
+      socket.emit("deleteDiscardFoodItem", itemName);
+      socket.once("deleteDiscardFoodItemResponse", (response) => {
         if (response.success) {
           console.log(response.message);
           requestMenu(role, employeeId);

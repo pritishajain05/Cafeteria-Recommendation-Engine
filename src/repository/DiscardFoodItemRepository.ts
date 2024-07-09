@@ -3,6 +3,7 @@ import { pool } from "../db";
 import {
   ADD_DISCARD_FOOD_ITEM,
   CHECK_DISCARD_FOOD_ITEMS_GENERATED,
+  DELETE_DISCARD_FOOD_ITEM,
   GET_DISCARD_FOODITEM_BY_DATE,
 } from "../utils/constant";
 import { IDiscardFoodItem } from "../interface/IDiscardFoodItem";
@@ -49,5 +50,15 @@ export class DiscardFoodItemRepository {
     const [rows] = await pool.execute<RowDataPacket[]>(CHECK_DISCARD_FOOD_ITEMS_GENERATED);
     return rows[0].count > 0;
 
+  }
+
+  async deleteDiscardFoodItem(itemName: string): Promise<{ message: string; success: boolean }> {
+    try {
+      await pool.execute<RowDataPacket[]>(DELETE_DISCARD_FOOD_ITEM, [itemName]);
+      return {message:"Deleted discard Food item successfully" , success:true}
+    } catch (error) {
+      console.error("Error deleting discard food item:", error);
+      throw error;
+    }
   }
 }

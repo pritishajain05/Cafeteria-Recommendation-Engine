@@ -7,6 +7,7 @@ import { DiscardFoodItemService } from './../service/DiscardFoodItemService';
 import { FeedbackService } from './../service/FeedbackService';
 import { UserActivityService } from "../service/UserActivityService";
 import { UserAction } from "../enum/UserAction";
+import { FoodItemService } from "../service/FoodItemService";
 
 export class ChefController {
   private recommendationService: RecommendationService;
@@ -15,6 +16,7 @@ export class ChefController {
   private discardFoodItemService: DiscardFoodItemService;
   private feedbackService:FeedbackService;
   private userActivityService: UserActivityService;
+  private foodItemService: FoodItemService;
   private socketEmployeeIdMapping: { [socketId: string]: number }
 
 
@@ -25,6 +27,7 @@ export class ChefController {
     this.discardFoodItemService = new DiscardFoodItemService();
     this.feedbackService = new FeedbackService();
     this.userActivityService = new UserActivityService();
+    this.foodItemService = new FoodItemService();
     this.socketEmployeeIdMapping = socketEmployeeIdMapping;
   }
 
@@ -37,6 +40,7 @@ export class ChefController {
     socket.on("getDiscardFooditems", () => this.getDiscardFooditems(socket));
     socket.on("storeFeedbackQuestions", (itemName, questions, discardFoodItemId)=>this.storeFeedbackQuestions(socket,itemName, questions, discardFoodItemId));
     socket.on("checkFinalMenu", () => this.checkFinalMenu(socket));
+    socket.on("deleteDiscardFoodItem", (itemName:string) => this.deleteDiscardFoodItem(socket, itemName))
   }
 
   private async viewRecommendedFoodItems(socket: Socket) {
@@ -133,6 +137,20 @@ export class ChefController {
       socket.emit("getDiscardFoodItemResponse", {
         error: "error generating discard items",
       });
+    }
+  }
+
+  private async deleteDiscardFoodItem(socket: Socket, itemName: string) {
+    try {
+      const result = await this.discardFoodItemService.deleteDiscardFoodItem(itemName);
+      await this.foodItemService.deleteFoodItem(itemName);
+      socket.emit("deleteDiscardFoodItemResponse", {
+        success: result.success,
+        message: result.message,
+      });
+      this.userActivityService.recordUserAction(this.socketEmployeeIdMapping[socket.id], UserAction.DELETE_DISCARD_FOOD_ITEM);
+    } catch (error) {
+      socket.emit("deleteFoodItemResponse", { success: false, message: `Failed to delete food item: ${error}` });
     }
   }
 

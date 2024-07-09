@@ -152,6 +152,8 @@ export const CHECK_USER_VOTED_TODAY: string = `
 export const CHECK_FINAL_MENU_EXISTENCE: string =
   "SELECT COUNT(*) as count FROM finalFoodItem WHERE date=?";
 
+export const DELETE_DISCARD_FOOD_ITEM = `DELETE FROM discardFoodItem WHERE foodItemName = ?`;
+
 export const positiveWords: string[] = [
   "good",
   "great",
