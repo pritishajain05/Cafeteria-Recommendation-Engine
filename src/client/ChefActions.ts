@@ -3,7 +3,7 @@ import { Role } from "../enum/Role";
 import { IMenuItem } from "../interface/IFoodItem";
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { requestMenu, socket } from "./client";
-import { promptFoodItemIdsForRollOutMenu } from "./promptFunctions";
+import { promptFoodItemIdsForFinalMenu, promptFoodItemIdsForRollOutMenu } from "./promptFunctions";
 
 export const viewRecommendedFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("viewRecommendedFoodItems");
@@ -41,8 +41,6 @@ export const viewRecommendedFoodItems = async (role: Role , employeeId:number) =
     requestMenu(role,employeeId);
   });
 };
-
-
 
 export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => {
   socket.emit("checkRolledOutMenu");
@@ -134,77 +132,97 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
   });
 };
 
-export const finalizeFoodItemsForNextDay = async (role: Role ,employeeId:number) => {
-  socket.emit("getRolledOutMenu");
-
-  socket.off("rolledOutMenuResponse");
-  socket.on("rolledOutMenuResponse", async (data) => {
-    if (data.error) {
-      console.error("Error fetching rolled out menu:", data.error);
+export const finalizeFoodItemsForNextDay = async (role: Role, employeeId: number) =>{
+  socket.emit("checkFinalMenu");
+  socket.once("checkFinalMenuResponse", async (data) => {
+    if (data.isFinalMenu) {
+      console.log("Menu has already been finalized for today!");
+      requestMenu(role, employeeId);
       return;
     }
 
-    const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
-    const topBreakfastItem = findTopVotedItem(rolledOutMenu, "Breakfast");
-    const topLunchItem = findTopVotedItem(rolledOutMenu, "Lunch");
-    const topDinnerItem = findTopVotedItem(rolledOutMenu, "Dinner");
+    socket.emit("getRolledOutMenu");
 
-    const finalizedItems = [
-      topBreakfastItem,
-      topLunchItem,
-      topDinnerItem,
-    ].filter((item) => item !== undefined);
-    
-    console.log("Tomorrow's Menu");
-    console.log("Breakfast Item:");
-    console.table(topBreakfastItem);
-
-    console.log("Lunch Item:");
-    console.table(topLunchItem);
-
-    console.log("Dinner Item:");
-    console.table(topDinnerItem);
-
-    socket.emit("storeFinalizedItems", finalizedItems);
-
-    socket.once("storefinalizedItemsResponse", (response) => {
-      if (response.success) {
-        console.log(response.message);
-        socket.emit(
-          "sendNotificationToEmployees",
-          "Menu has been finalized for tomorrow ! \n Press 2 --> View final Menu",
-          false
-        );
-        socket.off("employeeNotificationResponse");
-        socket.on("employeeNotificationResponse", (response) => {
-          if (response.success) {
-            console.log(response.message);
-            requestMenu(role,employeeId);
-          } else {
-            console.error(response.message);
-            requestMenu(role,employeeId);
-          }
-        });
-      } else {
-        console.error(response.message);
+    socket.off("rolledOutMenuResponse");
+    socket.on("rolledOutMenuResponse", async (data) => {
+      if (data.error) {
+        console.error("Error fetching rolled out menu:", data.error);
+        return;
       }
-      
+
+      const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
+
+      if(rolledOutMenu.length === 0){
+        console.log("You cannot finalize the menu right now since the mneu has not been rolled out till now!");
+        requestMenu(role,employeeId);
+        return;
+      }
+      rolledOutMenu.sort((a, b) => b.votes - a.votes);
+
+      const breakfastItems = rolledOutMenu.filter((item) =>
+        item.mealType.includes(MealType[MealType.Breakfast])
+      );
+
+      console.log("Breakfast Menu:");
+      console.table(breakfastItems);
+
+      const selectedBreakfastIds = await promptFoodItemIdsForFinalMenu("Breakfast");
+
+      const lunchItems = rolledOutMenu.filter((item) =>
+        item.mealType.includes(MealType[MealType.Lunch])
+      );
+
+      console.log("Lunch Menu:");
+      console.table(lunchItems);
+
+      const selectedLunchIds = await promptFoodItemIdsForFinalMenu("Lunch");
+
+      const dinnerItems = rolledOutMenu.filter((item) =>
+        item.mealType.includes(MealType[MealType.Dinner])
+      );
+
+      console.log("Dinner Menu:");
+      console.table(dinnerItems);
+
+      const selectedDinnerIds = await promptFoodItemIdsForFinalMenu("Dinner");
+
+      const selectedIds = [
+        ...selectedBreakfastIds,
+        ...selectedLunchIds,
+        ...selectedDinnerIds,
+      ];
+
+    
+      socket.emit("storeFinalizedItems", selectedIds);
+
+      socket.once("storeFinalizedItemsResponse", (response) => {
+        if (response.success) {
+          console.log(response.message);
+          socket.emit(
+            "sendNotificationToEmployees",
+            "Menu has been finalized for tomorrow! \n Press 2 --> View final Menu",
+            false
+          );
+
+          socket.off("employeeNotificationResponse");
+          socket.on("employeeNotificationResponse", (response) => {
+            if (response.success) {
+              console.log(response.message);
+              requestMenu(role, employeeId);
+            } else {
+              console.error(response.message);
+              requestMenu(role, employeeId);
+            }
+          });
+        } else {
+          console.error(response.message);
+        }
+      });
     });
   });
 };
 
-const findTopVotedItem = (
-  menu: IRolledOutFoodItem[],
-  mealType: string,
-): IRolledOutFoodItem[] => {
-  const filteredItems = menu.filter((item) => item.mealType === mealType);
-  if (filteredItems.length === 0) {
-    return [];
-  }
-  return filteredItems
-    .sort((a, b) => b.votes - a.votes)
-    .slice(0, 2);
-};
+
 
 
 

@@ -1,6 +1,6 @@
 import { RowDataPacket } from "mysql2";
 import { pool } from "../db";
-import { ADD_FINAL_FOOD_ITEM, GET_FINAL_FOOD_ITEM } from "../utils/constant";
+import { ADD_FINAL_FOOD_ITEM, CHECK_FINAL_MENU_EXISTENCE, GET_FINAL_FOOD_ITEM } from "../utils/constant";
 import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { IFinalFoodItem } from "../interface/IFinalFoodItem";
 
@@ -12,19 +12,13 @@ export class FinalFooditemRepository {
   }
 
   async addFinalFoodItem(
-    items: IRolledOutFoodItem[][]
+    selectedIds:number[]
   ): Promise<{ message: string; success: boolean }> {
     try {
-      const promises = items.map(async (itemArray) => {
-        await Promise.all(
-          itemArray.map(async (item) => {
-            await pool.execute<RowDataPacket[]>(ADD_FINAL_FOOD_ITEM, [item.id, this.currentDate]);
+      await Promise.all(selectedIds.map(async (id) => {
+            await pool.execute<RowDataPacket[]>(ADD_FINAL_FOOD_ITEM, [id, this.currentDate]);
           })
         );
-      });
-  
-      await Promise.all(promises);
-  
       return { message: "Finalized items stored successfully.", success: true };
     } catch (error) {
       console.error("Error in adding final food items:", error);
@@ -41,6 +35,19 @@ export class FinalFooditemRepository {
       return rows as IFinalFoodItem[];
     } catch (error) {
       console.error("Error fetching finalized menu:", error);
+      throw error;
+    }
+  }
+
+  async checkFinalMenu(): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(CHECK_FINAL_MENU_EXISTENCE, [
+        this.currentDate,
+      ]);
+      const count = (rows as any)[0].count;
+      return count > 0;
+    } catch (error) {
+      console.error("Error checking rolled out menu existence:", error);
       throw error;
     }
   }

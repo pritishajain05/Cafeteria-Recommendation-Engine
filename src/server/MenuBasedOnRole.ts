@@ -15,11 +15,13 @@ export const showMenu = (role: Role): string[] => {
     case Role.Chef:
       return [
         "1. View Menu",
-        "2. Roll Out Menu for next day", 
-        "3. Finalize Food Items for next day ",
-        "4. View Feedback on particular item",
-        "5. View Notifications",
-        "6. View Discard Food Items",
+        "2. View Recommended Food Items",
+        "3. Roll Out Menu for next day", 
+        "4. Finalize Food Items for next day ",
+        "5. View Final Menu",
+        "6. View Feedback on particular item",
+        "7. View Notifications",
+        "8. View Discard Food Items",
         "Type 'logout' to exit.",
       ];
     case Role.Employee:

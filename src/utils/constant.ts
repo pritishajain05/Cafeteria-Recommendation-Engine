@@ -146,6 +146,9 @@ export const CHECK_USER_VOTED_TODAY: string = `
     WHERE employeeid = ? AND action = ? AND timestamp >= ?
 `;
 
+export const CHECK_FINAL_MENU_EXISTENCE: string =
+  "SELECT COUNT(*) as count FROM finalFoodItem WHERE date=?";
+
 export const positiveWords: string[] = [
   "good",
   "great",

@@ -32,10 +32,11 @@ export class ChefController {
     socket.on("viewRecommendedFoodItems", () => this.viewRecommendedFoodItems(socket));
     socket.on("storeSelectedIds", (selectedIds:number[]) => this.storeSelectedIds(socket, selectedIds));
     socket.on("checkRolledOutMenu", () => this.checkRolledOutMenu(socket));
-    socket.on("storeFinalizedItems",(data:IRolledOutFoodItem[][]) => this.storeFinalizedItems(socket,data));
+    socket.on("storeFinalizedItems",(selectedIds:number[]) => this.storeFinalizedItems(socket,selectedIds));
     socket.on("getRolledOutMenu",() => this.getRolledOutMenu(socket));
     socket.on("getDiscardFooditems", () => this.getDiscardFooditems(socket));
     socket.on("storeFeedbackQuestions", (itemName, questions, discardFoodItemId)=>this.storeFeedbackQuestions(socket,itemName, questions, discardFoodItemId));
+    socket.on("checkFinalMenu", () => this.checkFinalMenu(socket));
   }
 
   private async viewRecommendedFoodItems(socket: Socket) {
@@ -81,10 +82,21 @@ export class ChefController {
     }
   }
 
-  private async storeFinalizedItems(socket :Socket,data: IRolledOutFoodItem[][]) {
+  private async checkFinalMenu(socket:Socket) {
     try {
-      const result = await this.finalFoodItemService.addFinalFoodItem(data);
-      socket.emit("storefinalizedItemsResponse", {
+      const isFinalMenu = await this.finalFoodItemService.checkFinalMenu();
+      socket.emit("checkFinalMenuResponse", { isFinalMenu });
+    } catch (error) {
+      socket.emit("checkFinalMenuResponse", {
+        error: "Error checking final menu",
+      });
+    }
+  }
+
+  private async storeFinalizedItems(socket :Socket, selectedIds:number[]) {
+    try {
+      const result = await this.finalFoodItemService.addFinalFoodItem(selectedIds);
+      socket.emit("storeFinalizedItemsResponse", {
         success: result.success,
         message: result.message,
       });

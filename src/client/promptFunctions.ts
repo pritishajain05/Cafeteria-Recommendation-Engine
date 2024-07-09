@@ -220,6 +220,23 @@ export const promptFoodItemIdsForRollOutMenu = (mealType: string) => {
   });
 };
 
+
+export const promptFoodItemIdsForFinalMenu = (mealType: string) => {
+  return new Promise<number[]>((resolve) => {
+    rl.question(
+      `Enter the IDs of ${mealType} items ( Any 2 comma-separated): `,
+      (answer) => {
+        const selectedItemIds = (answer as string)
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
+
+        resolve(selectedItemIds);
+      }
+    );
+  });
+};
+
 export const promptActionAfterViewingDiscardItems = (): Promise<string> => {
   return new Promise<string>((resolve) => {
     rl.question(
