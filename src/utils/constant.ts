@@ -97,7 +97,10 @@ export const MARK_NOTIFICATION_AS_SEEN: string = `
 
 export const GET_ALL_FEEDBACK: string = `SELECT * FROM feedback`;
 
-export const GET_FEEDBACK_BY_FOODITEM_ID: string = `SELECT * FROM feedback WHERE foodItemId = ?`;
+export const GET_FEEDBACK_BY_FOODITEM_ID: string = ` SELECT feedback.*, foodItem.name AS foodItemName 
+  FROM feedback 
+  JOIN foodItem ON feedback.foodItemId = foodItem.id 
+  WHERE feedback.foodItemId = ?`;
 
 export const CHECK_FEEDBACK_FOR_TODAY: string = `SELECT * FROM feedback WHERE employeeId = ? AND foodItemId = ? AND date= ?`;
 

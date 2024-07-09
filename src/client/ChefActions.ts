@@ -10,8 +10,7 @@ export const viewRecommendedFoodItems = async (role: Role , employeeId:number) =
 
   let itemsFound = false;
 
-  socket.off("recommendedFoodItemsResponse");
-  socket.on("recommendedFoodItemsResponse", (data) => {
+  socket.once("recommendedFoodItemsResponse", (data) => {
     if (data.error) {
       console.error("Error fetching recommended food items:", data.error);
       return;
@@ -101,8 +100,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           ];
 
           socket.emit("storeSelectedIds", selectedIds);
-          socket.off("storeSelectedIdsResponse");
-          socket.on("storeSelectedIdsResponse", (response) => {
+          socket.once("storeSelectedIdsResponse", (response) => {
             if (response.success) {
               console.log(response.message);
               socket.emit(
@@ -110,8 +108,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
                 "New menu has been rolled out for the next day.\n Press 1 --> Please vote for your preferred items.",
                 false
               );
-              socket.off("employeeNotificationResponse");
-              socket.on("employeeNotificationResponse", (response) => {
+              socket.once("employeeNotificationResponse", (response) => {
                 if (response.success) {
                   console.log(response.message);
                   requestMenu(role,employeeId);
@@ -142,9 +139,7 @@ export const finalizeFoodItemsForNextDay = async (role: Role, employeeId: number
     }
 
     socket.emit("getRolledOutMenu");
-
-    socket.off("rolledOutMenuResponse");
-    socket.on("rolledOutMenuResponse", async (data) => {
+    socket.once("rolledOutMenuResponse", async (data) => {
       if (data.error) {
         console.error("Error fetching rolled out menu:", data.error);
         return;
@@ -204,8 +199,7 @@ export const finalizeFoodItemsForNextDay = async (role: Role, employeeId: number
             false
           );
 
-          socket.off("employeeNotificationResponse");
-          socket.on("employeeNotificationResponse", (response) => {
+          socket.once("employeeNotificationResponse", (response) => {
             if (response.success) {
               console.log(response.message);
               requestMenu(role, employeeId);

@@ -123,9 +123,7 @@ export const voteForFoodItemsForNextDay = async (
     }
 
   socket.emit("getRolledOutMenu");
-
-  socket.off("rolledOutMenuResponse");
-  socket.on("rolledOutMenuResponse", async (data) => {
+  socket.once("rolledOutMenuResponse", async (data) => {
     if (data.error) {
       console.error("Error fetching rolled out menu:", data.error);
       return;
@@ -231,9 +229,7 @@ export const giveFeedbackOnItem = async (role: Role, employeeId: number) => {
     rating: Number(rating),
     comment,
   });
-
-  socket.off("addFeedbackresponse");
-  socket.on("addFeedbackresponse", (response) => {
+  socket.once("addFeedbackresponse", (response) => {
     if (response.success) {
       console.log(response.message);
       requestMenu(role, employeeId);
@@ -252,9 +248,7 @@ export const viewFinalMenu = async (
   fromNotification: boolean
 ) => {
   socket.emit("getFinalizedMenu");
-
-  socket.off("finalizedMenuResponse");
-  socket.on("finalizedMenuResponse", (data) => {
+  socket.once("finalizedMenuResponse", (data) => {
     if (data.error) {
       console.error("Error fetching final menu:", data.error);
       return;
@@ -366,8 +360,7 @@ export const updateProfile = async (role: Role, employeeId: number) => {
   const preferences = await promptFoodItemPreferences();
 
   socket.emit("updateUserPreferences", employeeId, preferences);
-  socket.off("updateUserPreferencesResponse");
-  socket.on("updateUserPreferencesResponse", (response) => {
+  socket.once("updateUserPreferencesResponse", (response) => {
     if (response.success) {
       console.log("Profile updated successfully!");
     } else {

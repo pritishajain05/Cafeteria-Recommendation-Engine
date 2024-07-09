@@ -14,9 +14,7 @@ import {
 
 export const viewMenu = async (role: Role, employeeId: number) => {
   socket.emit("viewAllFoodItems");
-
-  socket.off("viewAllFoodItemsResponse");
-  socket.on("viewAllFoodItemsResponse", (data) => {
+  socket.once("viewAllFoodItemsResponse", (data) => {
     if (data.error) {
       console.error("Error fetching menu:", data.error);
       return;
@@ -45,11 +43,9 @@ export const viewMenu = async (role: Role, employeeId: number) => {
 };
 
 export const viewFeedbackOnItem = async (role: Role, employeeId: number) => {
-  const id = promptFeedbackItemId();
+  const id = await promptFeedbackItemId();
   socket.emit("viewFeedbackOnItem", id);
-
-  socket.off("feedbackresponse");
-  socket.on("feedbackresponse", (data) => {
+  socket.once("feedbackresponse", (data) => {
     if (data.error) {
       console.error("Error fetching feedback:", data.error);
       return;
@@ -95,8 +91,7 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
     if (actionChoice === "1") {
       const itemName = await promptFoodItemNameToRemove();
       socket.emit("deleteFoodItem", itemName);
-      socket.off("deleteFoodItemResponse");
-      socket.on("deleteFoodItemResponse", (response) => {
+      socket.once("deleteFoodItemResponse", (response) => {
         if (response.success) {
           console.log(response.message);
           requestMenu(role, employeeId);
@@ -143,8 +138,7 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
       const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
                 Press 3 --> Give Detailed Feedback`;
       socket.emit("sendNotificationToEmployees", message, false);
-      socket.off("employeeNotificationResponse");
-      socket.on("employeeNotificationResponse", (response) => {
+      socket.once("employeeNotificationResponse", (response) => {
         if (response.success) {
           console.log(
             `Notification sent to employees to provide feedback on ${itemName}.`
@@ -164,8 +158,7 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 
 export const viewNotification = async (role: Role, employeeId: number) => {
   socket.emit("getNotifications", employeeId);
-  socket.off("getNotificationsResponse");
-  socket.on("getNotificationsResponse", (data) => {
+  socket.once("getNotificationsResponse", (data) => {
     if (data.error) {
       console.error("Error fetching notifications:", data.error);
       return;

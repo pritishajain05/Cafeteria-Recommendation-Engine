@@ -2,6 +2,7 @@ export interface IFeedback {
   id: number;
   employeeId: number;
   foodItemId: number;
+  foodItemName?: string;
   rating: number;
   comment: string;
   date: Date;
