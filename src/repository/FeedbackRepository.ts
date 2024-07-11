@@ -24,7 +24,6 @@ export class FeedbackRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_ALL_FEEDBACK);
       return rows as IFeedback[];
     } catch (error) {
-      console.error("Error fetching all feedbacks:", error);
       throw error;
     }
   }
@@ -37,36 +36,33 @@ export class FeedbackRepository {
       );
       return rows as IFeedback[];
     } catch (error) {
-      console.error("Error fetching feedback by food item ID:", error);
       throw error;
     }
   }
 
-  async hasFeedbackForToday(data: IFeedback): Promise<boolean> {
+  async hasFeedbackForToday(employeeId :number , foodItemId: number): Promise<boolean> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(
         CHECK_FEEDBACK_FOR_TODAY,
-        [data.employeeId, data.foodItemId, this.currentDate]
+        [employeeId, foodItemId, this.currentDate]
       );
       return rows.length > 0;
     } catch (error) {
-      console.error("Error checking feedback existence for today:", error);
       throw error;
     }
   }
 
-  async addFeedbackOnItem(data: IFeedback): Promise<{ message: string, success: boolean }> {
+  async addFeedbackOnItem(employeeId:number, foodItemId: number, rating: number, comment:string ): Promise<{ message: string, success: boolean }> {
     try {
       await pool.execute<RowDataPacket[]>(ADD_FEEDBACK_ON_ITEM, [
-        data.employeeId,
-        data.foodItemId,
-        data.rating,
-        data.comment,
+        employeeId,
+        foodItemId,
+        rating,
+        comment,
         this.currentDate
       ]);
       return { message: "Feedback added successfully!", success: true };
     } catch (error) {
-      console.error("Error adding the feedback:", error);
       throw error;
     }
   }
@@ -81,7 +77,6 @@ export class FeedbackRepository {
 
       return { success: true, message: `Questions stored successfully for ${itemName}.` };
     } catch (error) {
-      console.error(`Failed to store questions: ${error}`);
       throw error;
     }
   }
@@ -91,7 +86,6 @@ export class FeedbackRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_ALL_DETAILED_FEEDBACK_QUESTIONS);
       return rows as IDetailedFeedbackQuestion[];
     } catch (error) {
-      console.error("Error fetching feedback questions:", error);
       throw error;
     }
   }
@@ -101,7 +95,6 @@ export class FeedbackRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_EMPLOYEE_FEEDBACK_ANSWERS, [employeeId]);
       return rows as IDetailedFeedbackAnswer[];
     } catch (error) {
-      console.error("Error fetching employee feedback answers:", error);
       throw error;
     }
   }
@@ -115,7 +108,6 @@ export class FeedbackRepository {
     )
       
     } catch (error) {
-      console.error("Error storing feedback answers:", error);
       throw error;
     }
   }

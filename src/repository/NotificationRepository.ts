@@ -14,7 +14,6 @@ export class NotificationRepository {
     try {
       await pool.execute<RowDataPacket[]>(ADD_NOTIFICATION, [employeeId, message, this.currentDate, isSeen]);
     } catch (error) {
-      console.error("Error adding notification:", error);
       throw error;
     }
   }
@@ -24,7 +23,6 @@ export class NotificationRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_NOTIFICATION_BY_EMPLOYEE_ID, [employeeId]);
       return rows as INotification[];
     } catch (error) {
-      console.error("Error fetching notifications:", error);
       throw error;
     }
   }
@@ -34,7 +32,6 @@ export class NotificationRepository {
       const [result] = await pool.execute<RowDataPacket[]>(MARK_NOTIFICATION_AS_SEEN, [notificationId, employeeId]);
       return { success: true };
     } catch (error) {
-      console.error("Error marking notification as seen:", error);
       throw error;
     }
   }

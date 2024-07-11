@@ -26,7 +26,6 @@ export class RecommendationService {
       this.foodItems = await this.foodItemService.getAllFoodItem();
       this.feedbacks = await this.feedbackService.getAllFeedback();
     } catch (error) {
-      console.error('Error initializing data:', error);
       throw error;
     }
   }
@@ -51,7 +50,6 @@ export class RecommendationService {
       });
 
     } catch (error) {
-      console.error('Error fetching rolled out menu with feedback:', error);
       throw error;
     }
   }
@@ -78,7 +76,6 @@ export class RecommendationService {
       scoredItems.sort((a, b) => b.rankingScore - a.rankingScore);
       return scoredItems.slice(0, topN);
     } catch (error) {
-      console.error(`Error getting top items for ${mealType}:`, error);
       throw error;
     }
   }
@@ -160,7 +157,6 @@ export class RecommendationService {
 
       return {topBreakfastItems , topLunchItems , topDinnerItems}
     } catch (error) {
-      console.error("Error generating recommendations:", error);
       throw error;
     } 
   }
@@ -190,7 +186,6 @@ export class RecommendationService {
   
       await this.discardFoodItemService.addDiscardFoodItem(discardFoodItems);
     } catch (error) {
-      console.error("Error fetching discard food items:", error);
       throw error;
     }
   }

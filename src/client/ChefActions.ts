@@ -5,32 +5,43 @@ import { IRolledOutFoodItem } from "../interface/IRolledOutFoodItem";
 import { requestMenu, socket } from "./client";
 import { promptFoodItemIdsForFinalMenu, promptFoodItemIdsForRollOutMenu } from "./promptFunctions";
 
+interface RecommendedFoodItemResponse {
+  topBreakfastItems : IMenuItem[]
+  topLunchItems : IMenuItem[]
+  topDinnerItems : IMenuItem[]
+  error ?:string
+}
+interface MessageResponse {
+  success: boolean;
+  message: string;
+}
+
 export const viewRecommendedFoodItems = async (role: Role , employeeId:number) => {
   socket.emit("viewRecommendedFoodItems");
 
   let itemsFound = false;
 
-  socket.once("recommendedFoodItemsResponse", (data) => {
-    if (data.error) {
-      console.error("Error fetching recommended food items:", data.error);
+  socket.once("recommendedFoodItemsResponse", (response:RecommendedFoodItemResponse) => {
+    if (response.error) {
+      console.error(response.error);
       return;
     }
 
-    if (data.topBreakfastItems && data.topBreakfastItems.length > 0) {
+    if (response.topBreakfastItems && response.topBreakfastItems.length > 0) {
       console.log("Recommended Breakfast Items:");
-      console.table(data.topBreakfastItems);
+      console.table(response.topBreakfastItems);
       itemsFound = true;
     }
 
-    if (data.topLunchItems && data.topLunchItems.length > 0) {
+    if (response.topLunchItems && response.topLunchItems.length > 0) {
       console.log("Recommended Lunch Items:");
-      console.table(data.topLunchItems);
+      console.table(response.topLunchItems);
       itemsFound = true;
     }
 
-    if (data.topDinnerItems && data.topDinnerItems.length > 0) {
+    if (response.topDinnerItems && response.topDinnerItems.length > 0) {
       console.log("Recommended Dinner Items:");
-      console.table(data.topDinnerItems);
+      console.table(response.topDinnerItems);
       itemsFound = true;
     }
 
@@ -43,16 +54,27 @@ export const viewRecommendedFoodItems = async (role: Role , employeeId:number) =
 
 export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => {
   socket.emit("checkRolledOutMenu");
-  socket.once("checkRolledOutMenuResponse", (data) => {
-    if (data.menuRolledOut) {
+  socket.once("checkRolledOutMenuResponse", (response: {isMenuRolledOut:boolean , error ?:string}) => {
+    if (response.error) {
+      console.error(response.error);
+      requestMenu(role, employeeId);
+      return
+    }
+    if (response.isMenuRolledOut) {
       console.log(
         "Menu has already been rolled out for today. You cannot roll out the menu again."
       );
       requestMenu(role,employeeId);
     } else {
       socket.emit("viewAllFoodItems");
-      socket.on("viewAllFoodItemsResponse", (data) => {
-        const formattedFoodItems: IMenuItem[] = data.foodItems.map(
+      socket.on("viewAllFoodItemsResponse", (response:{foodItems:IMenuItem[] , error?: string}) => {
+        if (response.error) {
+          console.error(response.error);
+          requestMenu(role, employeeId);
+          return;
+        }
+     
+        const formattedFoodItems: IMenuItem[] = response.foodItems.map(
           (foodItem: IMenuItem) => ({
             id: foodItem.id,
             name: foodItem.name,
@@ -64,7 +86,12 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
         );
 
         socket.emit("viewRecommendedFoodItems");
-        socket.on("recommendedFoodItemsResponse", async (data) => {
+        socket.on("recommendedFoodItemsResponse", async (response:RecommendedFoodItemResponse) => {
+          if (response.error) {
+            console.error(response.error);
+            requestMenu(role, employeeId);
+            
+          }
           const breakfastItems = formattedFoodItems.filter((item) =>
             item.mealType.includes(MealType[MealType.Breakfast])
           );
@@ -72,7 +99,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.log("Breakfast Menu:");
           console.table(breakfastItems);
           console.log("\n \n Recommended Breakfast Items:");
-          console.table(data.topBreakfastItems);
+          console.table(response.topBreakfastItems);
           const selectedBreakfastIds = await promptFoodItemIdsForRollOutMenu("Breakfast");
 
           const lunchItems = formattedFoodItems.filter((item) =>
@@ -81,7 +108,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.log("Lunch Menu:");
           console.table(lunchItems);
           console.log("\n \n Recommended Lunch Items:");
-          console.table(data.topLunchItems);
+          console.table(response.topLunchItems);
           const selectedLunchIds = await promptFoodItemIdsForRollOutMenu("Lunch");
 
           const dinnerItems = formattedFoodItems.filter((item) =>
@@ -90,7 +117,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
           console.log("Dinner Menu:");
           console.table(dinnerItems);
           console.log(" \n \n Recommended Dinner Items:");
-          console.table(data.topDinnerItems);
+          console.table(response.topDinnerItems);
           const selectedDinnerIds = await promptFoodItemIdsForRollOutMenu("Dinner");
 
           const selectedIds = [
@@ -99,21 +126,20 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
             ...selectedDinnerIds,
           ];
 
-          socket.emit("storeSelectedIds", selectedIds);
-          socket.once("storeSelectedIdsResponse", (response) => {
+          socket.emit("storeSelectedIds",{selectedIds});
+          socket.once("storeSelectedIdsResponse", (response:MessageResponse) => {
             if (response.success) {
               console.log(response.message);
               socket.emit(
                 "sendNotificationToEmployees",
-                "New menu has been rolled out for the next day.\n Press 1 --> Please vote for your preferred items.",
-                false
+               { message:"New menu has been rolled out for the next day.\n Press 1 --> Please vote for your preferred items.",isSeen:false}
               );
-              socket.once("employeeNotificationResponse", (response) => {
-                if (response.success) {
-                  console.log(response.message);
+              socket.once("employeeNotificationResponse", (notificationResponse :MessageResponse) => {
+                if (notificationResponse.success) {
+                  console.log(notificationResponse.message);
                   requestMenu(role,employeeId);
                 } else {
-                  console.error(response.message);
+                  console.error(notificationResponse.message);
                   requestMenu(role,employeeId);
                 }
               });
@@ -131,21 +157,27 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
 
 export const finalizeFoodItemsForNextDay = async (role: Role, employeeId: number) =>{
   socket.emit("checkFinalMenu");
-  socket.once("checkFinalMenuResponse", async (data) => {
-    if (data.isFinalMenu) {
+  socket.once("checkFinalMenuResponse", async (response:{ isFinalMenu: boolean, error?: string }) => {
+    if (response.error) {
+      console.error("Error checking final menu:",response.error);
+      requestMenu(role, employeeId);
+      return;
+    }
+    if (response.isFinalMenu) {
       console.log("Menu has already been finalized for today!");
       requestMenu(role, employeeId);
       return;
     }
 
     socket.emit("getRolledOutMenu");
-    socket.once("rolledOutMenuResponse", async (data) => {
-      if (data.error) {
-        console.error("Error fetching rolled out menu:", data.error);
+    socket.once("rolledOutMenuResponse", async (response: { rolledOutMenu: IRolledOutFoodItem[], error?: string }) => {
+      if (response.error) {
+        console.error("Error fetching rolled out menu:", response.error);
+        requestMenu(role, employeeId);
         return;
       }
 
-      const rolledOutMenu: IRolledOutFoodItem[] = data.rolledOutMenu;
+      const rolledOutMenu: IRolledOutFoodItem[] = response.rolledOutMenu;
 
       if(rolledOutMenu.length === 0){
         console.log("You cannot finalize the menu right now since the mneu has not been rolled out till now!");
@@ -188,28 +220,26 @@ export const finalizeFoodItemsForNextDay = async (role: Role, employeeId: number
       ];
 
     
-      socket.emit("storeFinalizedItems", selectedIds);
+      socket.emit("storeFinalizedItems", {selectedIds});
 
-      socket.once("storeFinalizedItemsResponse", (response) => {
+      socket.once("storeFinalizedItemsResponse", (response:MessageResponse) => {
         if (response.success) {
           console.log(response.message);
           socket.emit(
-            "sendNotificationToEmployees",
-            "Menu has been finalized for tomorrow! \n Press 2 --> View final Menu",
-            false
+            "sendNotificationToEmployees", { message: "Menu has been finalized for tomorrow! \n Press 2 --> View final Menu", isSeen: false }
           );
 
-          socket.once("employeeNotificationResponse", (response) => {
-            if (response.success) {
-              console.log(response.message);
-              requestMenu(role, employeeId);
+          socket.once("employeeNotificationResponse", (notificationResponse: MessageResponse) => {
+            if (notificationResponse.success) {
+              console.log(notificationResponse.message);
             } else {
-              console.error(response.message);
-              requestMenu(role, employeeId);
+              console.error(notificationResponse.message);
             }
+            requestMenu(role, employeeId);
           });
         } else {
           console.error(response.message);
+          requestMenu(role, employeeId);
         }
       });
     });

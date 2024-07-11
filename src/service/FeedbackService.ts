@@ -7,55 +7,82 @@ import { FeedbackRepository } from "../repository/FeedbackRepository";
 
 export class FeedbackService {
   private feedbackRepository = new FeedbackRepository();
- 
+
   async getAllFeedback(): Promise<IFeedback[]> {
-    return await this.feedbackRepository.getAllFeedback();
+    try {
+      return await this.feedbackRepository.getAllFeedback();
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getFeedbackByFoodItemId(id: number): Promise<IFeedback[]> {
-    return await this.feedbackRepository.getFeedbackByFoodItemId(id);
+    try {
+      return await this.feedbackRepository.getFeedbackByFoodItemId(id);
+    } catch (error) {
+      throw error;
+    }
   }
 
-
-  async addFeedbackOnItem(
-    data: IFeedback
-  ): Promise<{ message: string; success: boolean }> {
-    const hasFeedbackForToday =
-      await this.feedbackRepository.hasFeedbackForToday(data);
-    if (hasFeedbackForToday) {
-      return {
-        message: "You have already given feedback on this item today!",
-        success: false,
-      };
+  async addFeedbackOnItem( employeeId:number, foodItemId: number, rating: number, comment:string ): Promise<{ message: string; success: boolean }> {
+    try {
+      const hasFeedbackForToday =
+        await this.feedbackRepository.hasFeedbackForToday(employeeId,foodItemId);
+      if (hasFeedbackForToday) {
+        return {
+          message: "You have already given feedback on this item today!",
+          success: false,
+        };
+      }
+      return await this.feedbackRepository.addFeedbackOnItem(employeeId,foodItemId,rating,comment);
+    } catch (error) {
+      throw error;
     }
-    return await this.feedbackRepository.addFeedbackOnItem(data);
   }
 
   async storeDetailedFeedbackQuestions(
     itemName: string,
     questions: string[],
-    discardFoodItemId:number
+    discardFoodItemId: number
   ): Promise<{ message: string; success: boolean }> {
-    return await this.feedbackRepository.storeDetailedFeedbackQuestions(
-      itemName,
-      questions,
-      discardFoodItemId
-    );
+    try {
+      return await this.feedbackRepository.storeDetailedFeedbackQuestions(
+        itemName,
+        questions,
+        discardFoodItemId
+      );
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getFeedbackQuestions(): Promise<IDetailedFeedbackQuestion[]> {
-    return await this.feedbackRepository.getFeedbackQuestions();
+    try {
+      return await this.feedbackRepository.getFeedbackQuestions();
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getEmployeeFeedbackAnswers(
     employeeId: number
   ): Promise<IDetailedFeedbackAnswer[]> {
-    return await this.feedbackRepository.getEmployeeFeedbackAnswers(employeeId);
+    try {
+      return await this.feedbackRepository.getEmployeeFeedbackAnswers(
+        employeeId
+      );
+    } catch (error) {
+      throw error;
+    }
   }
 
   async storeFeedbackAnswers(
     answers: IDetailedFeedbackAnswer[]
   ): Promise<void> {
-    return await this.feedbackRepository.storeFeedbackAnswers(answers);
+    try {
+      return await this.feedbackRepository.storeFeedbackAnswers(answers);
+    } catch (error) {
+      throw error;
+    }
   }
 }

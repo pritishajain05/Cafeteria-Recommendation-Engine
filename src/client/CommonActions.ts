@@ -12,17 +12,23 @@ import {
   promptUserChoiceFromNotification,
 } from "./promptFunctions";
 
+interface MessageResponse {
+  success: boolean;
+  message: string;
+}
+
 export const viewMenu = async (role: Role, employeeId: number) => {
   socket.emit("viewAllFoodItems");
-  socket.once("viewAllFoodItemsResponse", (data) => {
-    if (data.error) {
-      console.error("Error fetching menu:", data.error);
+  socket.once("viewAllFoodItemsResponse", (response: { foodItems: IMenuItem[]; error?: string }) => {
+    if (response.error) {
+      console.error("Error fetching menu:", response.error);
+      requestMenu(role, employeeId);
       return;
     }
 
-    if (data.foodItems && data.foodItems.length > 0) {
+    if (response.foodItems && response.foodItems.length > 0) {
       console.log("Complete Menu:");
-      const formattedFoodItems: IMenuItem[] = data.foodItems.map(
+      const formattedFoodItems: IMenuItem[] = response.foodItems.map(
         (foodItem: IMenuItem) => ({
           id: foodItem.id,
           name: foodItem.name,
@@ -44,17 +50,18 @@ export const viewMenu = async (role: Role, employeeId: number) => {
 
 export const viewFeedbackOnItem = async (role: Role, employeeId: number) => {
   const id = await promptFeedbackItemId();
-  socket.emit("viewFeedbackOnItem", id);
-  socket.once("feedbackresponse", (data) => {
-    if (data.error) {
-      console.error("Error fetching feedback:", data.error);
+  socket.emit("viewFeedbackOnItem", { id });
+  socket.once("feedbackResponse", (response: { feedback: IFeedback[]; error?: string }) => {
+    if (response.error) {
+      console.error("Error fetching feedback:", response.error);
+      requestMenu(role, employeeId);
       return;
     }
 
-    if (data.feedback && data.feedback.length > 0) {
+    if (response.feedback && response.feedback.length > 0) {
       console.log(`Feedback for Food Item ID ${id}:`);
       console.table(
-        data.feedback.map((feedback: IFeedback) => {
+        response.feedback.map((feedback: IFeedback) => {
           const { employeeId, date, ...rest } = feedback;
           return { ...rest, date: new Date(date).toLocaleDateString() };
         })
@@ -69,15 +76,16 @@ export const viewFeedbackOnItem = async (role: Role, employeeId: number) => {
 export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
   socket.emit("getDiscardFooditems");
 
-  socket.once("getDiscardFoodItemResponse", async (data) => {
-    if (data.error) {
-      console.error("Error fetching discard menu items:", data.error);
+  socket.once("getDiscardFoodItemResponse", async (response: { discardFoodItems: IDiscardFoodItem[]; error?: string }) => {
+    if (response.error) {
+      console.error("Error fetching discard menu items:", response.error);
+      requestMenu(role, employeeId);
       return;
     }
 
     console.log("Discard Menu Item List:");
     console.table(
-      data.discardFoodItems.map((item: IDiscardFoodItem) => {
+      response.discardFoodItems.map((item: IDiscardFoodItem) => {
         const { date, ...rest } = item;
         return {
           ...rest,
@@ -90,8 +98,8 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 
     if (actionChoice === "1") {
       const itemName = await promptFoodItemNameToRemove();
-      socket.emit("deleteDiscardFoodItem", itemName);
-      socket.once("deleteDiscardFoodItemResponse", (response) => {
+      socket.emit("deleteDiscardFoodItem", { itemName });
+      socket.once("deleteDiscardFoodItemResponse", (response: MessageResponse) => {
         if (response.success) {
           console.log(response.message);
           requestMenu(role, employeeId);
@@ -101,14 +109,12 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
       });
     } else if (actionChoice === "2") {
       const discardedItemId = await promptDiscardedItemIdForFeedback();
-      const discardFoodItem = data.discardFoodItems.find(
+      const discardFoodItem = response.discardFoodItems.find(
         (item: IDiscardFoodItem) => item.id === discardedItemId
       );
 
       if (!discardFoodItem) {
-        console.error(
-          `No discarded item found with the ID ${discardedItemId}.`
-        );
+        console.error(`No discarded item found with the ID ${discardedItemId}.`);
         return;
       }
 
@@ -121,13 +127,10 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
       ];
 
       socket.emit(
-        "storeFeedbackQuestions",
-        itemName,
-        questions,
-        discardFoodItem.id
+        "storeFeedbackQuestions", { itemName, questions, discardedItemId: discardFoodItem.id }
       );
 
-      socket.on("storeFeedbackQuestionsResponse", (response) => {
+      socket.on("storeFeedbackQuestionsResponse", (response: MessageResponse) => {
         if (response.success) {
           console.log(`Questions stored successfully for ${itemName}.`);
         } else {
@@ -137,12 +140,10 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 
       const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
                 Press 3 --> Give Detailed Feedback`;
-      socket.emit("sendNotificationToEmployees", message, false);
-      socket.once("employeeNotificationResponse", (response) => {
+      socket.emit("sendNotificationToEmployees", { message, isSeen: false });
+      socket.once("employeeNotificationResponse", (response: MessageResponse) => {
         if (response.success) {
-          console.log(
-            `Notification sent to employees to provide feedback on ${itemName}.`
-          );
+          console.log(`Notification sent to employees to provide feedback on ${itemName}.`);
           requestMenu(role, employeeId);
         } else {
           console.error(`Failed to send notification: ${response.message}`);
@@ -157,21 +158,20 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 };
 
 export const viewNotification = async (role: Role, employeeId: number) => {
-  socket.emit("getNotifications", employeeId);
-  socket.once("getNotificationsResponse", (data) => {
-    if (data.error) {
-      console.error("Error fetching notifications:", data.error);
+  socket.emit("getNotifications", { employeeId });
+  socket.once("getNotificationsResponse", (response: { notifications: INotification[]; error?: string }) => {
+    if (response.error) {
+      console.error("Error fetching notifications:", response.error);
+      requestMenu(role, employeeId);
       return;
     }
 
-    if (data.notifications && data.notifications.length > 0) {
+    if (response.notifications && response.notifications.length > 0) {
       console.log("Notifications:");
-      data.notifications.forEach((notification: INotification) => {
+      response.notifications.forEach((notification: INotification) => {
         console.log("-------------------");
         console.log(`Message: ${notification.message}`);
-        console.log(
-          `Date: ${new Date(notification.date).toLocaleDateString()}`
-        );
+        console.log(`Date: ${new Date(notification.date).toLocaleDateString()}`);
         console.log("-------------------");
 
         if (!notification.isSeen) {
@@ -190,9 +190,9 @@ export const viewNotification = async (role: Role, employeeId: number) => {
   });
 };
 
-export const handleLogout = async (role:Role , employeeId: number) => {
-  socket.emit("logout", employeeId);
-  socket.once("logoutResponse", (response) => {
+export const handleLogout = async (role: Role, employeeId: number) => {
+  socket.emit("logout", { employeeId });
+  socket.once("logoutResponse", (response: MessageResponse) => {
     if (response.success) {
       console.log(response.message);
       socket.disconnect();

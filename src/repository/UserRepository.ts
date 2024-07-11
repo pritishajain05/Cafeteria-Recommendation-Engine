@@ -23,7 +23,6 @@ export class UserRepository {
       }
 
     } catch (error) {
-      console.error("Error fetching user:", error);
       throw error;
     }
   }
@@ -45,7 +44,6 @@ export class UserRepository {
       ]);
       return {success: true, message:"Updated user profile successfully"};
     } catch (error) {
-      console.error("Error updating user preferences:", error);
       throw error;
     }
   }
@@ -55,7 +53,6 @@ export class UserRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(SELECT_USER_PREFERENCES, [employeeId]);
       return rows[0] as IUserPreference; 
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
       throw error; 
     }
   }

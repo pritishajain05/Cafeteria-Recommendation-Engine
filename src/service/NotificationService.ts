@@ -7,29 +7,44 @@ export class NotificationService {
   private userRepository = new UserRepository();
 
   async sendNotificationToChefAndEmployee(message: string, isSeen: boolean): Promise<void> {
-    const employeeIds = await this.userRepository.getUsersByRole('Employee');
-    const chefIds = await this.userRepository.getUsersByRole('Chef');
-    const allUserIds = [...employeeIds, ...chefIds];
+    try {
+      const employeeIds = await this.userRepository.getUsersByRole('Employee');
+      const chefIds = await this.userRepository.getUsersByRole('Chef');
+      const allUserIds = [...employeeIds, ...chefIds];
 
-    for (const userId of allUserIds) {
-      await this.notificationRepository.addNotification(userId, message, isSeen);
+      for (const userId of allUserIds) {
+        await this.notificationRepository.addNotification(userId, message, isSeen);
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
   async sendNotificationToEmployees(message: string, isSeen: boolean): Promise<void> {
-    const employeeIds = await this.userRepository.getUsersByRole('Employee');
+    try {
+      const employeeIds = await this.userRepository.getUsersByRole('Employee');
 
-    for (const userId of employeeIds) {
-      await this.notificationRepository.addNotification(userId, message, isSeen);
+      for (const userId of employeeIds) {
+        await this.notificationRepository.addNotification(userId, message, isSeen);
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
   async getNotifications(employeeId: number): Promise<INotification[]> {
-    return await this.notificationRepository.getNotificationsByEmployeeId(employeeId);
+    try {
+      return await this.notificationRepository.getNotificationsByEmployeeId(employeeId);
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async markNotificationAsSeen(notificationId:number , employeeId:number): Promise<{ success: boolean }> {
-    return await this.notificationRepository.markNotificationAsSeen(notificationId, employeeId)
-
+  async markNotificationAsSeen(notificationId: number, employeeId: number): Promise<{ success: boolean }> {
+    try {
+      return await this.notificationRepository.markNotificationAsSeen(notificationId, employeeId);
+    } catch (error) {
+      throw error;
+    }
   }
 }

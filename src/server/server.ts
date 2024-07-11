@@ -31,8 +31,8 @@ class Server {
     this.io.on("connection", (socket: Socket) => {
       console.log("Client connected");
 
-      socket.on("setEmployeeId", (employeeId: number) => {
-        this.socketEmployeeIdMapping[socket.id] = employeeId;
+      socket.on("setEmployeeId", (response:{employeeId: number}) => {
+        this.socketEmployeeIdMapping[socket.id] = response.employeeId;
       });
 
       this.userController.initializeUserHandlers(socket);

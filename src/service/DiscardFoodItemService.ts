@@ -7,17 +7,34 @@ export class DiscardFoodItemService {
   async addDiscardFoodItem(
     discardFoodItems: IDiscardFoodItem[]
   ): Promise<void> {
-    await this.discardFoodItemRepository.addDiscardFoodItem(discardFoodItems);
+    try {
+      await this.discardFoodItemRepository.addDiscardFoodItem(discardFoodItems);
+    } catch (error) {
+      throw error;
+    }
   }
+
   async getDiscardFoodItem(): Promise<IDiscardFoodItem[]> {
-    return await this.discardFoodItemRepository.getDiscardFoodItem();
+    try {
+      return await this.discardFoodItemRepository.getDiscardFoodItem();
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async checkDiscardFoodItemsGenerated() : Promise<boolean> {
-    return await this.discardFoodItemRepository.checkDiscardFoodItemsGenerated();
+  async checkDiscardFoodItemsGenerated(): Promise<boolean> {
+    try {
+      return await this.discardFoodItemRepository.checkDiscardFoodItemsGenerated();
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async deleteDiscardFoodItem(itemName:string) : Promise<{ message: string; success: boolean }> {
-    return await this.discardFoodItemRepository.deleteDiscardFoodItem(itemName);
+  async deleteDiscardFoodItem(itemName: string): Promise<{ message: string; success: boolean }> {
+    try {
+      return await this.discardFoodItemRepository.deleteDiscardFoodItem(itemName);
+    } catch (error) {
+      throw error;
+    }
   }
 }

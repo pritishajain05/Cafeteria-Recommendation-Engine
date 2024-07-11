@@ -1,10 +1,19 @@
 import { io, Socket } from "socket.io-client";
 import { Role } from "../enum/Role";
-import {
-  handleMenuOptionSelection,
-  getLoginInput,
-} from "./promptFunctions";
+import { handleMenuOptionSelection, getLoginInput } from "./promptFunctions";
+import { IUser } from "../interface/IUser";
 
+interface MenuResponse {
+  menu: string[];
+  role: Role;
+  employeeId: number;
+  error?: string;
+}
+
+interface LoginResponse {
+  user: IUser;
+  error?: string;
+}
 
 export class Client {
   private socket: Socket;
@@ -15,48 +24,47 @@ export class Client {
   }
 
   private initialize(): void {
-    this.socket.on("connect",()=> this.onConnect());
-    this.socket.on("loginResponse",(data:any)=>this.onLoginResponse(data));
-    this.socket.on("menuResponse", (data:any)=> this.onMenuResponse(data));
+    this.socket.on("connect", () => this.onConnect());
+    this.socket.on("loginResponse", (response: LoginResponse) => this.onLoginResponse(response));
+    this.socket.on("menuResponse", (response: MenuResponse) => this.onMenuResponse(response));
     this.socket.on("disconnect", () => this.onDisconnect());
   }
 
-  private async onConnect(): Promise<void> {
+  private async onConnect():Promise<void> {
     console.log("Connected to server");
     const { employeeId, name } = await getLoginInput();
     this.socket.emit("login", { id: parseInt(employeeId), name });
   }
 
-  private onLoginResponse(data: any): void {
-    if (data.error) {
-      console.log(data.error);
+  private onLoginResponse(response: LoginResponse): void {
+    if (response.error) {
+      console.log(response.error);
       this.onConnect(); 
     } else {
-      console.log(`Logged in as ${data.role}`);
-      this.socket.emit("setEmployeeId", data.employeeId);
-      this.requestMenu(data.role, data.employeeId);
+      console.log(`Logged in as ${response.user.role}`);
+      this.socket.emit("setEmployeeId", { employeeId: response.user.employeeId });
+      this.requestMenu(response.user.role, response.user.employeeId)
     }
   }
 
- 
-  private onMenuResponse(data: any): void {
-    if (data.error) {
-      console.log(data.error);
+  private onMenuResponse(response: MenuResponse) : void {
+    if (response.error) {
+      console.log(response.error);
     } else {
       console.log("Menu:");
-      data.menu.forEach((item: string) => {
+      response.menu.forEach((item: string) => {
         console.log(item);
       });
-      handleMenuOptionSelection(data.role, data.employeeId);
+      handleMenuOptionSelection(response.role, response.employeeId);
     }
   }
-  
-  private onDisconnect(): void {
+
+  private onDisconnect(): void  {
     console.log("Connection closed");
     process.exit(0);
   }
 
-  public requestMenu(role: Role, employeeId: number): void {
+  public requestMenu(role: Role, employeeId: number) : void {
     this.socket.emit("getRoleBasedMenu", { role, employeeId });
   }
 

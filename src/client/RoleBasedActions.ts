@@ -4,7 +4,7 @@ import {
   updateFoodItem,
 } from "./AdminActions";
 import { Role } from "../enum/Role";
-import { requestMenu, socket } from "./client";
+import { requestMenu } from "./client";
 import {
   finalizeFoodItemsForNextDay,
   rollOutMenuForNextDay,
@@ -55,6 +55,7 @@ export const handleChefOption = async (option: string, role: Role , employeeId:n
       break;
     case "2":
       await viewRecommendedFoodItems(role,employeeId);
+      break;
     case "3":
       await rollOutMenuForNextDay(role,employeeId);
       break;

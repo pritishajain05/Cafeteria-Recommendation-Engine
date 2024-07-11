@@ -31,7 +31,6 @@ export class DiscardFoodItemRepository {
         })
       );
     } catch (error) {
-      console.error("Error adding discard food items:", error);
       throw error;
     }
   }
@@ -41,15 +40,17 @@ export class DiscardFoodItemRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_DISCARD_FOODITEM_BY_DATE);
       return rows as IDiscardFoodItem[];
     } catch (error) {
-      console.error("Error adding discard food items:", error);
       throw error;
     }
   }
 
-  async checkDiscardFoodItemsGenerated() : Promise<boolean> {
-    const [rows] = await pool.execute<RowDataPacket[]>(CHECK_DISCARD_FOOD_ITEMS_GENERATED);
-    return rows[0].count > 0;
-
+  async checkDiscardFoodItemsGenerated(): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(CHECK_DISCARD_FOOD_ITEMS_GENERATED);
+      return rows[0].count > 0;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deleteDiscardFoodItem(itemName: string): Promise<{ message: string; success: boolean }> {
@@ -57,7 +58,6 @@ export class DiscardFoodItemRepository {
       await pool.execute<RowDataPacket[]>(DELETE_DISCARD_FOOD_ITEM, [itemName]);
       return {message:"Deleted discard Food item successfully" , success:true}
     } catch (error) {
-      console.error("Error deleting discard food item:", error);
       throw error;
     }
   }

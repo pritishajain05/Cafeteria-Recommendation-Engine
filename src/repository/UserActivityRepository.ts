@@ -9,7 +9,6 @@ export class UserActivityRepository {
         try {
             await pool.execute<RowDataPacket[]>(RECORD_USER_ACTIVITY,[employeeId,action]);
         } catch (error) {
-            console.log("error in recording user action",error);
             throw error;
         }
     }
@@ -23,7 +22,6 @@ export class UserActivityRepository {
 
             return rows.length > 0;
         } catch (error) {
-            console.log("Error in checking if user voted today", error);
             throw error;
         }
     }

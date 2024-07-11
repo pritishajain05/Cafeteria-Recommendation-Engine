@@ -21,7 +21,6 @@ export class FinalFooditemRepository {
         );
       return { message: "Finalized items stored successfully.", success: true };
     } catch (error) {
-      console.error("Error in adding final food items:", error);
       throw error;
     }
   }
@@ -34,7 +33,6 @@ export class FinalFooditemRepository {
 
       return rows as IFinalFoodItem[];
     } catch (error) {
-      console.error("Error fetching finalized menu:", error);
       throw error;
     }
   }
@@ -47,7 +45,6 @@ export class FinalFooditemRepository {
       const count = (rows as any)[0].count;
       return count > 0;
     } catch (error) {
-      console.error("Error checking rolled out menu existence:", error);
       throw error;
     }
   }

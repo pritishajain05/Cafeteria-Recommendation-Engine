@@ -4,7 +4,17 @@ import { UserService } from "../service/UserService";
 import { showMenu } from "../server/MenuBasedOnRole";
 import { UserActivityService } from './../service/UserActivityService';
 import { UserAction } from "../enum/UserAction";
- 
+
+interface LoginData {
+  id: number;
+  name: string;
+}
+
+interface MenuRequest {
+  role: Role;
+  employeeId: number;
+}
+
 export class UserController {
   private userService: UserService;
   private userActivityService: UserActivityService;
@@ -15,17 +25,17 @@ export class UserController {
   }
 
   public initializeUserHandlers(socket: Socket): void {
-    socket.on("login", (data) => this.handleLogin(socket, data));
-    socket.on("getRoleBasedMenu", (data) => this.handleGetRoleBasedMenu(socket, data));
-    socket.on("logout",(employeeId:number) => this.handleLogout(socket,employeeId))
+    socket.on("login", (request: LoginData) => this.handleLogin(socket, request));
+    socket.on("getRoleBasedMenu", (request: MenuRequest) => this.handleGetRoleBasedMenu(socket, request));
+    socket.on("logout", (request:{employeeId: number}) => this.handleLogout(socket, request));
   }
 
-  private async handleLogin(socket: Socket, data: { id: number; name: string }) {
+  private async handleLogin(socket: Socket, request: LoginData):Promise<void> {
     try {
-      const user = await this.userService.login(data.id, data.name);
+      const user = await this.userService.login(request.id, request.name);
       if (user) {
-        socket.emit("loginResponse", user);
-        this.userActivityService.recordUserAction(user.employeeId,UserAction.LOGIN)
+        socket.emit("loginResponse", { user });
+        await this.userActivityService.recordUserAction(user.employeeId, UserAction.LOGIN);
       } else {
         socket.emit("loginResponse", { error: "Invalid credentials" });
       }
@@ -34,20 +44,20 @@ export class UserController {
     }
   }
 
-  private handleGetRoleBasedMenu(socket: Socket, data: { role: Role; employeeId: number }) {
+  private handleGetRoleBasedMenu(socket: Socket, menuRequest: MenuRequest) :void {
     try {
-      const menu = showMenu(data.role);
-      socket.emit("menuResponse", { menu, role: data.role, employeeId: data.employeeId });
+      const menu = showMenu(menuRequest.role);
+      socket.emit("menuResponse", { menu, role: menuRequest.role, employeeId: menuRequest.employeeId });
     } catch (error) {
-      socket.emit("menuResponse", { error: "Invalid role." });
+      socket.emit("menuResponse", { error: "An error occurred while fetching the menu." });
     }
   }
 
-  private handleLogout(socket:Socket,employeeId:number) {
+  private async handleLogout(socket: Socket, request:{employeeId: number}):Promise<void> {
     try {
-      this.userActivityService.recordUserAction(employeeId, UserAction.LOGOUT);
+      await this.userActivityService.recordUserAction(request.employeeId, UserAction.LOGOUT);
       socket.emit("logoutResponse", { success: true, message: "Logged out successfully." });
-      socket.disconnect(true); 
+      socket.disconnect(true);
     } catch (error) {
       socket.emit("logoutResponse", { success: false, message: "Failed to logout." });
     }

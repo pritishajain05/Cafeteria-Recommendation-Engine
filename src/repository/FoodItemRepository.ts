@@ -43,7 +43,6 @@ export class FoodItemRepository {
         return null;
       }
     } catch (error) {
-      console.error("Error fetching categories:", error);
       throw error;
     }
   }
@@ -56,7 +55,6 @@ export class FoodItemRepository {
       );
       return rows.length > 0;
     } catch (error) {
-      console.error("Error checking food item existence:", error);
       throw error;
     }
   }
@@ -73,7 +71,6 @@ export class FoodItemRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(LAST_INSERTED_ID);
       return rows[0].id;
     } catch (error) {
-      console.error("Error in adding food item:", error);
       throw error;
     }
   }
@@ -89,7 +86,6 @@ export class FoodItemRepository {
       ]);
       return { message: "Item and preferences added successfully.", success: true };
     } catch (error) {
-      console.error("Error in adding food item preference:", error);
       throw error;
     }
   };
@@ -101,7 +97,6 @@ export class FoodItemRepository {
       await pool.execute<RowDataPacket[]>(DELETE_FOOD_ITEM, [itemName]);
       return { message: "Item deleted successfully.", success: true };
     } catch (error) {
-      console.error("Error in deleting food item:", error);
       throw error;
     }
   }
@@ -123,7 +118,6 @@ export class FoodItemRepository {
       const [rows] = await pool.execute<RowDataPacket[]>("SELECT id FROM foodItem WHERE name = ?",[newFoodItem.name]);
       return rows[0].id;
     } catch (error) {
-      console.error("Error in updating food item:", error);
       throw error;
     }
   }
@@ -142,7 +136,6 @@ export class FoodItemRepository {
       ]);
       return { message: "Item and preferences updated successfully.", success: true };
     } catch (error) {
-      console.error("Error in updating food item preferences:", error);
       throw error;
     }
   }
@@ -168,7 +161,6 @@ export class FoodItemRepository {
 
       return foodItems;
     } catch (error) {
-      console.error("Error fetching food items with details:", error);
       throw error;
     }
   }
@@ -180,7 +172,6 @@ export class FoodItemRepository {
       );
       return rows as IFoodItemPreference[];
     } catch (error) {
-      console.error("Error fetching all food item preferences:", error);
       throw error;
     }
   }

@@ -24,7 +24,6 @@ export class RolledOutFoodItemRepository {
       );
       return { message: "Selected items successfully rolled out." };
     } catch (error) {
-      console.error("Error adding rolled out items:", error);
       throw error;
     }
   }
@@ -35,7 +34,6 @@ export class RolledOutFoodItemRepository {
 
       return rows as IRolledOutFoodItem[];
     } catch (error) {
-      console.error("Error fetching recommended food items:", error);
       throw error;
     }
   }
@@ -48,7 +46,6 @@ export class RolledOutFoodItemRepository {
       const count = (rows as any)[0].count;
       return count > 0;
     } catch (error) {
-      console.error("Error checking rolled out menu existence:", error);
       throw error;
     }
   }
@@ -67,7 +64,6 @@ export class RolledOutFoodItemRepository {
       );
       return { message: "Voted Successfully" };
     } catch (error) {
-      console.error("Error in voting:", error);
       throw error;
     }
   }

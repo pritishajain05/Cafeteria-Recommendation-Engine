@@ -5,16 +5,28 @@ export class FinalFoodItemService {
   private finalFoodItemRepository = new FinalFooditemRepository();
 
   async addFinalFoodItem(
-    selectedIds:number[]
+    selectedIds: number[]
   ): Promise<{ message: string; success: boolean }> {
-    return await this.finalFoodItemRepository.addFinalFoodItem(selectedIds);
+    try {
+      return await this.finalFoodItemRepository.addFinalFoodItem(selectedIds);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getFinalFoodItem(): Promise<IFinalFoodItem[]> {
-    return await this.finalFoodItemRepository.getFinalFoodItem();
+    try {
+      return await this.finalFoodItemRepository.getFinalFoodItem();
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async checkFinalMenu():Promise<boolean> {
-    return await this.finalFoodItemRepository.checkFinalMenu();
+  async checkFinalMenu(): Promise<boolean> {
+    try {
+      return await this.finalFoodItemRepository.checkFinalMenu();
+    } catch (error) {
+      throw error;
+    }
   }
 }
