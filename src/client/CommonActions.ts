@@ -94,67 +94,70 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
       })
     );
 
-    const actionChoice = await promptActionAfterViewingDiscardItems();
-
-    if (actionChoice === "1") {
-      const itemName = await promptFoodItemNameToRemove();
-      socket.emit("deleteDiscardFoodItem", { itemName });
-      socket.once("deleteDiscardFoodItemResponse", (response: MessageResponse) => {
-        if (response.success) {
-          console.log(response.message);
-          requestMenu(role, employeeId);
-        } else {
-          console.error(response.message);
+    do {
+     const actionChoice = await promptActionAfterViewingDiscardItems();
+  
+      if (actionChoice === "1") {
+        const itemName = await promptFoodItemNameToRemove();
+        socket.emit("deleteDiscardFoodItem", { itemName });
+        socket.once("deleteDiscardFoodItemResponse", (response: MessageResponse) => {
+          if (response.success) {
+            console.log(response.message);
+            requestMenu(role, employeeId);
+          } else {
+            console.error(response.message);
+          }
+        });
+        break;
+      } else if (actionChoice === "2") {
+        const discardedItemId = await promptDiscardedItemIdForFeedback();
+        const discardFoodItem = response.discardFoodItems.find(
+          (item: IDiscardFoodItem) => item.id === discardedItemId
+        );
+  
+        if (!discardFoodItem) {
+          console.error(`No discarded item found with the ID ${discardedItemId}.`);
+          return;
         }
-      });
-    } else if (actionChoice === "2") {
-      const discardedItemId = await promptDiscardedItemIdForFeedback();
-      const discardFoodItem = response.discardFoodItems.find(
-        (item: IDiscardFoodItem) => item.id === discardedItemId
-      );
+  
+        const itemName = discardFoodItem.foodItemName;
+  
+        const questions = [
+          `What didn’t you like about ${itemName}?`,
+          `How would you like ${itemName} to taste?`,
+          `Share your mom’s recipe for ${itemName}.`,
+        ];
 
-      if (!discardFoodItem) {
-        console.error(`No discarded item found with the ID ${discardedItemId}.`);
-        return;
+        socket.emit("storeFeedbackQuestions", { itemName, questions, discardedItemId });
+  
+        socket.on("storeFeedbackQuestionsResponse", (response: MessageResponse) => {
+          if (response.success) {
+            console.log(`Questions stored successfully for ${itemName}.`);
+          } else {
+            console.error(`Failed to store questions: ${response.message}`);
+          }
+        });
+  
+        const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
+                  Press 3 --> Give Detailed Feedback`;
+        socket.emit("sendNotificationToEmployees", { message, isSeen: false });
+        socket.once("employeeNotificationResponse", (response: MessageResponse) => {
+          if (response.success) {
+            console.log(`Notification sent to employees to provide feedback on ${itemName}.`);
+            requestMenu(role, employeeId);
+          } else {
+            console.error(`Failed to send notification: ${response.message}`);
+          }
+        });
+        break;
+      } else if (actionChoice === "exit") {
+        requestMenu(role, employeeId);
+        break;
+      } else {
+        console.log("Invalid choice. Please enter 1 or 2.");
       }
-
-      const itemName = discardFoodItem.foodItemName;
-
-      const questions = [
-        `What didn’t you like about ${itemName}?`,
-        `How would you like ${itemName} to taste?`,
-        `Share your mom’s recipe for ${itemName}.`,
-      ];
-
-      socket.emit(
-        "storeFeedbackQuestions", { itemName, questions, discardedItemId: discardFoodItem.id }
-      );
-
-      socket.on("storeFeedbackQuestionsResponse", (response: MessageResponse) => {
-        if (response.success) {
-          console.log(`Questions stored successfully for ${itemName}.`);
-        } else {
-          console.error(`Failed to store questions: ${response.message}`);
-        }
-      });
-
-      const message = `We are trying to improve your experience with ${itemName}. Please provide your feedback and help us. \n
-                Press 3 --> Give Detailed Feedback`;
-      socket.emit("sendNotificationToEmployees", { message, isSeen: false });
-      socket.once("employeeNotificationResponse", (response: MessageResponse) => {
-        if (response.success) {
-          console.log(`Notification sent to employees to provide feedback on ${itemName}.`);
-          requestMenu(role, employeeId);
-        } else {
-          console.error(`Failed to send notification: ${response.message}`);
-        }
-      });
-    } else if (actionChoice === "exit") {
-      requestMenu(role, employeeId);
-    } else {
-      console.log("Invalid choice. Please enter 1 or 2.");
-    }
-  });
+    } while (true);
+  })
 };
 
 export const viewNotification = async (role: Role, employeeId: number) => {

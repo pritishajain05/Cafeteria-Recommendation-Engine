@@ -116,8 +116,8 @@ export const IS_ITEM_IN_FINAL_MENU: string = `"SELECT * FROM finalFoodItem WHERE
 export const GET_DISCARD_FOODITEM_BY_DATE: string = `SELECT * FROM discardFoodItem`;
 
 export const ADD_DETAILED_FEEDBACK_QUESTION: string = `
-  INSERT INTO detailedFeedbackQuestion (foodItemName, question, date,discardFoodItemId)
-  VALUES (?, ?, ?,?)
+  INSERT INTO detailedFeedbackQuestion (foodItemName, question, date, discardFoodItemId)
+  VALUES (?, ?, ?, ?)
 `;
 
 export const GET_ALL_DETAILED_FEEDBACK_QUESTIONS: string =

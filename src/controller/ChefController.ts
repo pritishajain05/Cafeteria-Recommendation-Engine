@@ -36,7 +36,7 @@ export class ChefController {
     socket.on("storeFinalizedItems", (request: {selectedIds: number[]}) => this.storeFinalizedItems(socket, request));
     socket.on("getRolledOutMenu", () => this.getRolledOutMenu(socket));
     socket.on("getDiscardFooditems", () => this.getDiscardFooditems(socket));
-    socket.on("storeFeedbackQuestions",(request:{itemName:string, questions: string[], discardFoodItemId: number}) => this.storeFeedbackQuestions(socket, request));
+    socket.on("storeFeedbackQuestions",(request:{itemName:string, questions: string[], discardedItemId: number}) => this.storeFeedbackQuestions(socket, request));
     socket.on("checkFinalMenu", () => this.checkFinalMenu(socket));
     socket.on("deleteDiscardFoodItem", (request: {itemName: string}) => this.deleteDiscardFoodItem(socket, request));
   }
@@ -123,9 +123,9 @@ export class ChefController {
     }
   }
 
-  private async storeFeedbackQuestions( socket: Socket, request:{itemName: string, questions: string[], discardFoodItemId: number} ) {
+  private async storeFeedbackQuestions( socket: Socket, request:{itemName: string, questions: string[], discardedItemId: number} ) {
     try {
-      const response = await this.feedbackService.storeDetailedFeedbackQuestions( request.itemName, request.questions, request.discardFoodItemId);
+      const response = await this.feedbackService.storeDetailedFeedbackQuestions( request.itemName, request.questions, request.discardedItemId);
       socket.emit("storeFeedbackQuestionsResponse", { success: response.success, message: response.message});
     } catch (error) {
       socket.emit("storeFeedbackQuestionsResponse", { success: false, message: error });
