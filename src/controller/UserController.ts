@@ -5,16 +5,6 @@ import { showMenu } from "../server/MenuBasedOnRole";
 import { UserActivityService } from './../service/UserActivityService';
 import { UserAction } from "../enum/UserAction";
 
-interface LoginData {
-  id: number;
-  name: string;
-}
-
-interface MenuRequest {
-  role: Role;
-  employeeId: number;
-}
-
 export class UserController {
   private userService: UserService;
   private userActivityService: UserActivityService;
@@ -25,12 +15,12 @@ export class UserController {
   }
 
   public initializeUserHandlers(socket: Socket): void {
-    socket.on("login", (request: LoginData) => this.handleLogin(socket, request));
-    socket.on("getRoleBasedMenu", (request: MenuRequest) => this.handleGetRoleBasedMenu(socket, request));
+    socket.on("login", (request: {id: number , name: string}) => this.handleLogin(socket, request));
+    socket.on("getRoleBasedMenu", (request: { role: Role , employeeId: number}) => this.handleGetRoleBasedMenu(socket, request));
     socket.on("logout", (request:{employeeId: number}) => this.handleLogout(socket, request));
   }
 
-  private async handleLogin(socket: Socket, request: LoginData):Promise<void> {
+  private async handleLogin(socket: Socket, request: {id: number , name: string}):Promise<void> {
     try {
       const user = await this.userService.login(request.id, request.name);
       if (user) {
@@ -44,10 +34,10 @@ export class UserController {
     }
   }
 
-  private handleGetRoleBasedMenu(socket: Socket, menuRequest: MenuRequest) :void {
+  private handleGetRoleBasedMenu(socket: Socket, request: { role: Role , employeeId: number}) :void {
     try {
-      const menu = showMenu(menuRequest.role);
-      socket.emit("menuResponse", { menu, role: menuRequest.role, employeeId: menuRequest.employeeId });
+      const menu = showMenu(request.role);
+      socket.emit("menuResponse", { menu, role: request.role, employeeId: request.employeeId });
     } catch (error) {
       socket.emit("menuResponse", { error: "An error occurred while fetching the menu." });
     }

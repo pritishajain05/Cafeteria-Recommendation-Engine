@@ -125,7 +125,7 @@ export class ChefController {
 
   private async storeFeedbackQuestions( socket: Socket, request:{itemName: string, questions: string[], discardedItemId: number} ) {
     try {
-      const response = await this.feedbackService.storeDetailedFeedbackQuestions( request.itemName, request.questions, request.discardedItemId);
+      const response = await this.feedbackService.addDetailedFeedbackQuestions( request.itemName, request.questions, request.discardedItemId);
       socket.emit("storeFeedbackQuestionsResponse", { success: response.success, message: response.message});
     } catch (error) {
       socket.emit("storeFeedbackQuestionsResponse", { success: false, message: error });

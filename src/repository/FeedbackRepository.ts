@@ -67,7 +67,7 @@ export class FeedbackRepository {
     }
   }
 
-  async storeDetailedFeedbackQuestions(itemName: string, questions: string[] , discardFoodItemId:number): Promise<{ message: string, success: boolean }> {
+  async addDetailedFeedbackQuestions(itemName: string, questions: string[] , discardFoodItemId:number): Promise<{ message: string, success: boolean }> {
     try {
       await Promise.all(
         questions.map(async (question) => {
@@ -90,7 +90,7 @@ export class FeedbackRepository {
     }
   }
 
-  async getEmployeeFeedbackAnswers(employeeId: number): Promise<IDetailedFeedbackAnswer[]> {
+  async getFeedbackAnswersByEmployeeId(employeeId: number): Promise<IDetailedFeedbackAnswer[]> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(GET_EMPLOYEE_FEEDBACK_ANSWERS, [employeeId]);
       return rows as IDetailedFeedbackAnswer[];
@@ -99,7 +99,7 @@ export class FeedbackRepository {
     }
   }
 
-  async storeFeedbackAnswers(answers: IDetailedFeedbackAnswer[]): Promise<void> {
+  async addFeedbackAnswers(answers: IDetailedFeedbackAnswer[]): Promise<void> {
     try {
       await Promise.all(
       answers.map(async (answer) => 

@@ -40,13 +40,13 @@ export class FeedbackService {
     }
   }
 
-  async storeDetailedFeedbackQuestions(
+  async addDetailedFeedbackQuestions(
     itemName: string,
     questions: string[],
     discardFoodItemId: number
   ): Promise<{ message: string; success: boolean }> {
     try {
-      return await this.feedbackRepository.storeDetailedFeedbackQuestions(
+      return await this.feedbackRepository.addDetailedFeedbackQuestions(
         itemName,
         questions,
         discardFoodItemId
@@ -68,7 +68,7 @@ export class FeedbackService {
     employeeId: number
   ): Promise<IDetailedFeedbackAnswer[]> {
     try {
-      return await this.feedbackRepository.getEmployeeFeedbackAnswers(
+      return await this.feedbackRepository.getFeedbackAnswersByEmployeeId(
         employeeId
       );
     } catch (error) {
@@ -76,11 +76,11 @@ export class FeedbackService {
     }
   }
 
-  async storeFeedbackAnswers(
+  async addFeedbackAnswers(
     answers: IDetailedFeedbackAnswer[]
   ): Promise<void> {
     try {
-      return await this.feedbackRepository.storeFeedbackAnswers(answers);
+      return await this.feedbackRepository.addFeedbackAnswers(answers);
     } catch (error) {
       throw error;
     }

@@ -67,7 +67,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
       requestMenu(role,employeeId);
     } else {
       socket.emit("viewAllFoodItems");
-      socket.on("viewAllFoodItemsResponse", (response:{foodItems:IMenuItem[] , error?: string}) => {
+      socket.once("viewAllFoodItemsResponse", (response:{foodItems:IMenuItem[] , error?: string}) => {
         if (response.error) {
           console.error(response.error);
           requestMenu(role, employeeId);
@@ -86,7 +86,7 @@ export const rollOutMenuForNextDay = async (role: Role , employeeId: number) => 
         );
 
         socket.emit("viewRecommendedFoodItems");
-        socket.on("recommendedFoodItemsResponse", async (response:RecommendedFoodItemResponse) => {
+        socket.once("recommendedFoodItemsResponse", async (response:RecommendedFoodItemResponse) => {
           if (response.error) {
             console.error(response.error);
             requestMenu(role, employeeId);

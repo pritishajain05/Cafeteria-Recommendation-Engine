@@ -130,7 +130,7 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
 
         socket.emit("storeFeedbackQuestions", { itemName, questions, discardedItemId });
   
-        socket.on("storeFeedbackQuestionsResponse", (response: MessageResponse) => {
+        socket.once("storeFeedbackQuestionsResponse", (response: MessageResponse) => {
           if (response.success) {
             console.log(`Questions stored successfully for ${itemName}.`);
           } else {

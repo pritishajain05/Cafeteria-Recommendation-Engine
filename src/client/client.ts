@@ -24,10 +24,10 @@ export class Client {
   }
 
   private initialize(): void {
-    this.socket.on("connect", () => this.onConnect());
-    this.socket.on("loginResponse", (response: LoginResponse) => this.onLoginResponse(response));
-    this.socket.on("menuResponse", (response: MenuResponse) => this.onMenuResponse(response));
-    this.socket.on("disconnect", () => this.onDisconnect());
+    this.socket.once("connect", () => this.onConnect());
+    this.socket.once("loginResponse", (response: LoginResponse) => this.onLoginResponse(response));
+    this.socket.once("menuResponse", (response: MenuResponse) => this.onMenuResponse(response));
+    this.socket.once("disconnect", () => this.onDisconnect());
   }
 
   private async onConnect():Promise<void> {
