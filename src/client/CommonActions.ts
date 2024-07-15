@@ -134,7 +134,7 @@ export const viewDiscardFoodItems = async (role: Role, employeeId: number) => {
           if (response.success) {
             console.log(`Questions stored successfully for ${itemName}.`);
           } else {
-            console.error(`Failed to store questions: ${response.message}`);
+            console.error(`${response.message}`);
           }
         });
   

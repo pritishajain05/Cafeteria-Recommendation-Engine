@@ -24,6 +24,7 @@ export const viewRecommendedFoodItems = async (role: Role , employeeId:number) =
   socket.once("recommendedFoodItemsResponse", (response:RecommendedFoodItemResponse) => {
     if (response.error) {
       console.error(response.error);
+      requestMenu(role,employeeId);
       return;
     }
 

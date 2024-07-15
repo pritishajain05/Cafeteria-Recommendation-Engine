@@ -26,8 +26,7 @@ export class FeedbackService {
 
   async addFeedbackOnItem( employeeId:number, foodItemId: number, rating: number, comment:string ): Promise<{ message: string; success: boolean }> {
     try {
-      const hasFeedbackForToday =
-        await this.feedbackRepository.hasFeedbackForToday(employeeId,foodItemId);
+      const hasFeedbackForToday =await this.feedbackRepository.hasFeedbackForToday(employeeId,foodItemId);
       if (hasFeedbackForToday) {
         return {
           message: "You have already given feedback on this item today!",
@@ -46,6 +45,15 @@ export class FeedbackService {
     discardFoodItemId: number
   ): Promise<{ message: string; success: boolean }> {
     try {
+
+      const isExistingQuestions = await this.feedbackRepository.checkExistingQuestions(discardFoodItemId);
+
+      console.log(isExistingQuestions);
+
+      if (isExistingQuestions > 0) {
+        return { message: `Questions for discard food item ID ${discardFoodItemId} already exist.` , success: false};
+      }
+      
       return await this.feedbackRepository.addDetailedFeedbackQuestions(
         itemName,
         questions,

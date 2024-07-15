@@ -4,6 +4,7 @@ import { RowDataPacket } from "mysql2";
 import {
   ADD_DETAILED_FEEDBACK_QUESTION,
   ADD_FEEDBACK_ON_ITEM,
+  CHECK_EXISTING_QUESTIONS,
   CHECK_FEEDBACK_FOR_TODAY,
   GET_ALL_DETAILED_FEEDBACK_QUESTIONS,
   GET_ALL_FEEDBACK,
@@ -62,6 +63,15 @@ export class FeedbackRepository {
         this.currentDate
       ]);
       return { message: "Feedback added successfully!", success: true };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async checkExistingQuestions(discardFoodItemId: number): Promise<number> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(CHECK_EXISTING_QUESTIONS, [discardFoodItemId]);
+      return rows[0].count;
     } catch (error) {
       throw error;
     }

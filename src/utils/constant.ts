@@ -120,6 +120,8 @@ export const ADD_DETAILED_FEEDBACK_QUESTION: string = `
   VALUES (?, ?, ?, ?)
 `;
 
+export const CHECK_EXISTING_QUESTIONS: string = 'SELECT COUNT(*) as count FROM detailedFeedbackQuestion WHERE discardFoodItemId = ?';
+
 export const GET_ALL_DETAILED_FEEDBACK_QUESTIONS: string =
   "SELECT * FROM detailedFeedbackQuestion";
 

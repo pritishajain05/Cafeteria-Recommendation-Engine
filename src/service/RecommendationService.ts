@@ -58,8 +58,8 @@ export class RecommendationService {
   async getTopItemsForMealType(mealType: string, topN: number): Promise<IMenuItem[]> {
     try {
       const feedbackMap = this.calculateFeedbackMap();
-      const filteredItems = this.foodItems.filter(item => item.mealType.includes(mealType) && item.availabilityStatus);
-
+      const filteredItems = this.foodItems.filter(item => item.mealType.includes(mealType) && item.availabilityStatus === 'available');
+      
       const scoredItems = filteredItems.map(item => {
         const feedback = feedbackMap.get(item.id) || { totalRating: 0, totalSentiment: 0, count: 0, comments: [] };
         const averageRating = feedback.count ? feedback.totalRating / feedback.count : 0;
