@@ -48,8 +48,6 @@ export class FeedbackService {
 
       const isExistingQuestions = await this.feedbackRepository.checkExistingQuestions(discardFoodItemId);
 
-      console.log(isExistingQuestions);
-
       if (isExistingQuestions > 0) {
         return { message: `Questions for discard food item ID ${discardFoodItemId} already exist.` , success: false};
       }
